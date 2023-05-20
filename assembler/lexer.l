@@ -40,11 +40,12 @@ SKIP \.skip
 ASCII \.ascii
 EQU \.equ
 END \.end
+STRING \"[^"]+\"
 LITERAL_DECIMAL -?[0-9]+
 LITERAL_HEXADECIMAL 0x[0-9A-F]+
-SYMBOL_OR_LITERAL = [a-zA-Z][a-zA-Z0-9_]*|0x[0-9A-F]+|-?[0-9]+
+LITERAL 0x[0-9A-F]+|-?[0-9]+
 SYMBOL [a-zA-Z][a-zA-Z0-9_]*
-LABEL ^([a-zA-Z][a-zA-Z0-9_]*):
+LABEL [a-zA-Z][a-zA-Z0-9_]*:
 
 /* In the below code, the TOKEN_blah types and the yylval
  * structure are used; these are defined in parser.y */
@@ -53,6 +54,7 @@ LABEL ^([a-zA-Z][a-zA-Z0-9_]*):
 
 {WS}        { /* skip whitspace */ }
 {COM}       { /* skip comments */ }
+
 {GLOBAL} {
     yylval.symbol = copy_str(yytext);
 		return TOKEN_GLOBAL;
@@ -89,6 +91,19 @@ LABEL ^([a-zA-Z][a-zA-Z0-9_]*):
 	yylval.symbol = copy_str(yytext);
 	return TOKEN_SYMBOL;
 }
+{LITERAL} {
+     yylval.symbol = copy_str(yytext);
+	return TOKEN_LITERAL;
+}
+{STRING} {
+     yylval.symbol = copy_str(yytext);
+	return TOKEN_STRING;
+}
+{LABEL} {
+     yylval.symbol = copy_str(yytext);
+	return TOKEN_LABEL;
+}
+
 {COMMA} { return TOKEN_COMMA; }
 
 \n             { ++line_num; return ENDL;}

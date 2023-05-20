@@ -44,12 +44,14 @@
  * (in this case) is an int. */
 //%token <num>   TOKEN_NUM
 %token <symbol> TOKEN_SYMBOL
-
-
+%token <symbol> TOKEN_LABEL
+%token <symbol> TOKEN_LITERAL
+%token <symbol> TOKEN_STRING
 /* These are non-terminals in our grammar, by which I mean, parser
  * rules down below. Each of these also has a meaningful return type,
  * which is declared in the same way. */
-%type <arg> list;
+%type <arg> list_symbol;
+%type <arg> list_literal_or_symbol;
 //%type <ident> rname;
 
 %%
@@ -59,26 +61,9 @@
  * for us to do or return as an action, so we omit any action after the
  * rules. */
 
- /*
- jedno od mogucih resenja:
- linija:
-  labela operacija
-  | labela
-  | operacija
-
-operacija:
-  instrukcija
-  | direktiva
-
-program:
-  linija
-  | program linija EOL
-
-a EOL token "\n"
- */
 prog
   :
-  | line prog
+  | line ENDL prog
   ;
 
 /* An instruction, in our toy assembly, is always an identifier (which
@@ -87,20 +72,28 @@ prog
  * will refer to either the result of the rule (in the case of other
  * parser rules) or the contents of yylval (in the case of lexer
  * tokens.) */
-/* instr
-  : TOKEN_IDENT TOKEN_SEMI
-    { mk_instruction($1, NULL); }
-  | TOKEN_IDENT arg TOKEN_SEMI
-    { mk_instruction($1, $2); }
-  | TOKEN_IDENT arg TOKEN_COMMA arg TOKEN_SEMI
-    { 
-	  struct arg *first_arg = $2;
-	  first_arg->next = $4;
-	  mk_instruction($1, $2);
-    }
-  ; */
 line
-: TOKEN_GLOBAL list ENDL
+:
+  label operation
+  | label
+  | operation
+  ;
+
+operation
+: directive
+| instruction
+  ;
+
+instruction:
+
+
+label:
+  TOKEN_LABEL
+  {list_of_lang_elems->push_back(new Directive(line_num, $1, NULL));}
+;
+
+directive
+: TOKEN_GLOBAL list_symbol
 {  
   struct arg* arg_list = $2;
   vector<string>* arg_vector = new vector<string>();
@@ -112,7 +105,7 @@ line
   global_arg = NULL;
   list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
   }
-  | TOKEN_EXTERN list ENDL
+  | TOKEN_EXTERN list_symbol
   {
     struct arg* arg_list = $2;
   vector<string>* arg_vector = new vector<string>();
@@ -124,11 +117,39 @@ line
   global_arg = NULL;
   list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
   }
-  | TOKEN_SECTION TOKEN_SYMBOL ENDL
+  | TOKEN_SECTION TOKEN_SYMBOL
   {
     vector<string>* arg_vector = new vector<string>();
     arg_vector->push_back($2);
     list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
+  }
+  | TOKEN_WORD list_literal_or_symbol
+  {
+    struct arg* arg_list = $2;
+  vector<string>* arg_vector = new vector<string>();
+  while(arg_list){
+    arg_vector->push_back(arg_list->sym);
+    arg_list= arg_list->next;
+  }
+  free_args(global_arg);
+  global_arg = NULL;
+  list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
+  }
+  | TOKEN_SKIP TOKEN_LITERAL
+  {
+    vector<string>* arg_vector = new vector<string>();
+    arg_vector->push_back($2);
+    list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
+  }
+  | TOKEN_ASCII TOKEN_STRING
+  {
+    vector<string>* arg_vector = new vector<string>();
+    arg_vector->push_back($2);
+    list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
+  }
+  | TOKEN_END
+  {
+    list_of_lang_elems->push_back(new Directive(line_num, $1, NULL));
   }
 ;
 /* An argument in this case has multiple choices: it can be a register
@@ -139,7 +160,49 @@ line
  * Here, I also name the results of terminals and non-terminals, instead
  * of addressing them by number.
  */
-list
+
+
+list_literal_or_symbol
+: TOKEN_LITERAL 
+{ 
+  if(global_arg == NULL){
+    global_arg = mk_argument($1);
+  }else{
+    global_arg->next = mk_argument($1);
+    global_arg = global_arg->next;
+  }
+  $$ = global_arg;
+}
+| TOKEN_SYMBOL
+{ 
+  if(global_arg == NULL){
+    global_arg = mk_argument($1);
+  }else{
+    global_arg->next = mk_argument($1);
+    global_arg = global_arg->next;
+  }
+  $$ = global_arg;
+}
+| list_literal_or_symbol TOKEN_COMMA TOKEN_LITERAL 
+{   
+  if(global_arg == NULL){
+    global_arg = mk_argument($3);
+  }else{
+    global_arg->next = mk_argument($3);
+    global_arg = global_arg->next;
+  }
+}
+| list_literal_or_symbol TOKEN_COMMA TOKEN_SYMBOL
+{   
+  if(global_arg == NULL){
+    global_arg = mk_argument($3);
+  }else{
+    global_arg->next = mk_argument($3);
+    global_arg = global_arg->next;
+  }
+}
+
+list_symbol
 : TOKEN_SYMBOL
 { 
   if(global_arg == NULL){
@@ -150,7 +213,7 @@ list
   }
   $$ = global_arg;
 }
-| list TOKEN_COMMA TOKEN_SYMBOL
+| list_symbol TOKEN_COMMA TOKEN_SYMBOL
 {   
   if(global_arg == NULL){
     global_arg = mk_argument($3);
@@ -159,6 +222,7 @@ list
     global_arg = global_arg->next;
   }
 }
+//ovo kod isntrukcija naci iz primera asemblera
 
 /* arg
   : TOKEN_LPAR rname[tok] TOKEN_PLUS TOKEN_NUM[num] TOKEN_RPAR
