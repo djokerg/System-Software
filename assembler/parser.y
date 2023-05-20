@@ -27,7 +27,15 @@
 %token TOKEN_PLUS
 %token TOKEN_SEMI */
 %token TOKEN_COMMA
+%token ENDL
 %token <symbol> TOKEN_GLOBAL
+%token <symbol> TOKEN_EXTERN
+%token <symbol> TOKEN_SECTION
+%token <symbol> TOKEN_WORD
+%token <symbol> TOKEN_SKIP
+%token <symbol> TOKEN_ASCII
+%token <symbol> TOKEN_EQU
+%token <symbol> TOKEN_END
 /* These are ALSO used in the lexer, but in addition to
  * being tokens, they also have return values associated
  * with them. We name those according to the names we used
@@ -50,6 +58,24 @@
  * followed by another program. In this case, there's nothing meaningful
  * for us to do or return as an action, so we omit any action after the
  * rules. */
+
+ /*
+ jedno od mogucih resenja:
+ linija:
+  labela operacija
+  | labela
+  | operacija
+
+operacija:
+  instrukcija
+  | direktiva
+
+program:
+  linija
+  | program linija EOL
+
+a EOL token "\n"
+ */
 prog
   :
   | line prog
@@ -74,7 +100,7 @@ prog
     }
   ; */
 line
-: TOKEN_GLOBAL list
+: TOKEN_GLOBAL list ENDL
 {  
   struct arg* arg_list = $2;
   vector<string>* arg_vector = new vector<string>();
@@ -83,7 +109,27 @@ line
     arg_list= arg_list->next;
   }
   free_args(global_arg);
-  list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));}
+  global_arg = NULL;
+  list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
+  }
+  | TOKEN_EXTERN list ENDL
+  {
+    struct arg* arg_list = $2;
+  vector<string>* arg_vector = new vector<string>();
+  while(arg_list){
+    arg_vector->push_back(arg_list->sym);
+    arg_list= arg_list->next;
+  }
+  free_args(global_arg);
+  global_arg = NULL;
+  list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
+  }
+  | TOKEN_SECTION TOKEN_SYMBOL ENDL
+  {
+    vector<string>* arg_vector = new vector<string>();
+    arg_vector->push_back($2);
+    list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
+  }
 ;
 /* An argument in this case has multiple choices: it can be a register
  * plus an offset, in which case it must be surrounded by parens, or

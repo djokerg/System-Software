@@ -15,9 +15,13 @@ class Directive: public Lang_Elem {
 
     void print_directive(){
       cout << this->line_num;
-      cout << identificator;
+      cout << identificator << " ";
       for(int i = 0; i < arg_list->size();i++){
-        cout << arg_list->at(i);
+        if(i != arg_list->size()-1){
+        cout << arg_list->at(i) << ",";
+        }else{
+          cout << arg_list->at(i) << "\n";
+        }
       }
     }
     ~Directive(){

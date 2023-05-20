@@ -15,8 +15,9 @@ main(int argc, char* argv[])
      * inside `global_prev`. */
 	if (yyparse())
 		return 1;
-
-	Directive* dir = (Directive*)list_of_lang_elems->at(0);
-	dir->print_directive();
+	for(int i =0; i < list_of_lang_elems->size(); i++){
+		Directive* dir = (Directive*)list_of_lang_elems->at(i);
+		dir->print_directive();
+	}
 	return 0;
 }

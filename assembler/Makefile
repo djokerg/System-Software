@@ -15,7 +15,7 @@ lexer.cpp: lexer.l helpers.hpp directive.hpp lang_elem.hpp
 
 # to regenerate the parser, we call `bison` on it, which will
 # create the bison.c and bison.h files
-parser.cpp: parser.y lexer.l helpers.hpp directive.hpp lang_elem.hpp
+parser.cpp: parser.y lexer.l helpers.hpp directive.hpp
 	bison parser.y
 
 clean:

@@ -33,7 +33,18 @@ HEX   0[Xx][0-9A-Fa-f]+ */
 COM   "#"[^\n\r]*
 WS    [ \r\t]*
 GLOBAL \.global
+EXTERN \.extern
+SECTION \.section
+WORD \.word
+SKIP \.skip
+ASCII \.ascii
+EQU \.equ
+END \.end
+LITERAL_DECIMAL -?[0-9]+
+LITERAL_HEXADECIMAL 0x[0-9A-F]+
+SYMBOL_OR_LITERAL = [a-zA-Z][a-zA-Z0-9_]*|0x[0-9A-F]+|-?[0-9]+
 SYMBOL [a-zA-Z][a-zA-Z0-9_]*
+LABEL ^([a-zA-Z][a-zA-Z0-9_]*):
 
 /* In the below code, the TOKEN_blah types and the yylval
  * structure are used; these are defined in parser.y */
@@ -42,16 +53,45 @@ SYMBOL [a-zA-Z][a-zA-Z0-9_]*
 
 {WS}        { /* skip whitspace */ }
 {COM}       { /* skip comments */ }
-{SYMBOL} {
-	yylval.symbol = copy_str(yytext);
-	return TOKEN_SYMBOL;
-}
 {GLOBAL} {
     yylval.symbol = copy_str(yytext);
 		return TOKEN_GLOBAL;
 }
+{EXTERN} {
+     yylval.symbol = copy_str(yytext);
+		return TOKEN_EXTERN;
+}
+{SECTION} {
+     yylval.symbol = copy_str(yytext);
+		return TOKEN_SECTION;
+}
+{WORD} {
+     yylval.symbol = copy_str(yytext);
+		return TOKEN_WORD;
+}
+{SKIP} {
+     yylval.symbol = copy_str(yytext);
+		return TOKEN_SKIP;
+}
+{ASCII} {
+     yylval.symbol = copy_str(yytext);
+		return TOKEN_ASCII;
+}
+{EQU} {
+     yylval.symbol = copy_str(yytext);
+		return TOKEN_EQU;
+}
+{END} {
+     yylval.symbol = copy_str(yytext);
+		return TOKEN_END;
+}
+{SYMBOL} {
+	yylval.symbol = copy_str(yytext);
+	return TOKEN_SYMBOL;
+}
 {COMMA} { return TOKEN_COMMA; }
-\n             { ++line_num;}
+
+\n             { ++line_num; return ENDL;}
 . {}
 %%
 
