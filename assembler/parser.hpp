@@ -51,18 +51,51 @@ extern int yydebug;
   {
     TOKEN_COMMA = 258,
     ENDL = 259,
-    TOKEN_GLOBAL = 260,
-    TOKEN_EXTERN = 261,
-    TOKEN_SECTION = 262,
-    TOKEN_WORD = 263,
-    TOKEN_SKIP = 264,
-    TOKEN_ASCII = 265,
-    TOKEN_EQU = 266,
-    TOKEN_END = 267,
-    TOKEN_SYMBOL = 268,
-    TOKEN_LABEL = 269,
-    TOKEN_LITERAL = 270,
-    TOKEN_STRING = 271
+    TOKEN_COMM = 260,
+    TOKEN_GLOBAL = 261,
+    TOKEN_EXTERN = 262,
+    TOKEN_SECTION = 263,
+    TOKEN_WORD = 264,
+    TOKEN_SKIP = 265,
+    TOKEN_ASCII = 266,
+    TOKEN_EQU = 267,
+    TOKEN_END = 268,
+    TOKEN_SYMBOL = 269,
+    TOKEN_LABEL = 270,
+    TOKEN_LITERAL = 271,
+    TOKEN_STRING = 272,
+    TOKEN_HALT = 273,
+    TOKEN_INT = 274,
+    TOKEN_IRET = 275,
+    TOKEN_CALL = 276,
+    TOKEN_RET = 277,
+    TOKEN_JMP = 278,
+    TOKEN_BEQ = 279,
+    TOKEN_BNE = 280,
+    TOKEN_BGT = 281,
+    TOKEN_PUSH = 282,
+    TOKEN_POP = 283,
+    TOKEN_XCHG = 284,
+    TOKEN_ADD = 285,
+    TOKEN_SUB = 286,
+    TOKEN_MUL = 287,
+    TOKEN_DIV = 288,
+    TOKEN_NOT = 289,
+    TOKEN_AND = 290,
+    TOKEN_OR = 291,
+    TOKEN_XOR = 292,
+    TOKEN_SHL = 293,
+    TOKEN_SHR = 294,
+    TOKEN_LD = 295,
+    TOKEN_ST = 296,
+    TOKEN_CSRRD = 297,
+    TOKEN_CSRWR = 298,
+    TOKEN_GP_REGISTER = 299,
+    TOKEN_CS_REGISTER = 300,
+    TOKEN_IMM = 301,
+    TOKEN_LSQB = 302,
+    TOKEN_RSQB = 303,
+    TOKEN_PLUS = 304
   };
 #endif
 
@@ -70,13 +103,14 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 17 "parser.y"
+#line 18 "parser.y"
 
 	int         num;
 	char       *symbol;
 	struct arg *arg;
+  class Addressing* adr;
 
-#line 80 "parser.hpp"
+#line 114 "parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

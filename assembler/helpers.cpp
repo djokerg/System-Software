@@ -37,3 +37,5 @@ free_args(struct arg *args)
 	}
 	global_arg = NULL;
 }
+FILE* myfile = nullptr;
+// Open a file handle to a particular file:

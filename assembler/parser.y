@@ -2,6 +2,7 @@
  * header includes here. */
 %{
 	#include "helpers.hpp"
+  #include "addressing.hpp"
 	#include <stdio.h>
   #include <vector>
 	int yylex(void);
@@ -18,16 +19,14 @@
 	int         num;
 	char       *symbol;
 	struct arg *arg;
+  class Addressing* adr;
 }
 
 /* These define the tokens that we use in the lexer.
  * All of these have no meaningful return value. */
-/* %token TOKEN_LPAR
-%token TOKEN_RPAR
-%token TOKEN_PLUS
-%token TOKEN_SEMI */
 %token TOKEN_COMMA
 %token ENDL
+%token TOKEN_COMM
 %token <symbol> TOKEN_GLOBAL
 %token <symbol> TOKEN_EXTERN
 %token <symbol> TOKEN_SECTION
@@ -50,8 +49,45 @@
 /* These are non-terminals in our grammar, by which I mean, parser
  * rules down below. Each of these also has a meaningful return type,
  * which is declared in the same way. */
+%token <symbol> TOKEN_HALT
+%token <symbol> TOKEN_INT
+%token <symbol> TOKEN_IRET
+%token <symbol> TOKEN_CALL
+%token <symbol> TOKEN_RET
+%token <symbol> TOKEN_JMP
+%token <symbol> TOKEN_BEQ
+%token <symbol> TOKEN_BNE
+%token <symbol> TOKEN_BGT
+%token <symbol> TOKEN_PUSH
+%token <symbol> TOKEN_POP
+%token <symbol> TOKEN_XCHG
+%token <symbol> TOKEN_ADD
+%token <symbol> TOKEN_SUB
+%token <symbol> TOKEN_MUL
+%token <symbol> TOKEN_DIV
+%token <symbol> TOKEN_NOT
+%token <symbol> TOKEN_AND
+%token <symbol> TOKEN_OR
+%token <symbol> TOKEN_XOR
+%token <symbol> TOKEN_SHL
+%token <symbol> TOKEN_SHR
+%token <symbol> TOKEN_LD
+%token <symbol> TOKEN_ST
+%token <symbol> TOKEN_CSRRD
+%token <symbol> TOKEN_CSRWR
+
+
+%token <symbol> TOKEN_GP_REGISTER
+%token <symbol> TOKEN_CS_REGISTER
+
+%token TOKEN_IMM;
+%token TOKEN_LSQB;
+%token TOKEN_RSQB;
+%token TOKEN_PLUS;
+
 %type <arg> list_symbol;
 %type <arg> list_literal_or_symbol;
+%type <adr> operand;//srediti ovo??
 //%type <ident> rname;
 
 %%
@@ -62,9 +98,23 @@
  * rules. */
 
 prog
-  :
-  | line ENDL prog
+: 
+line ENDLS
+| prog line ENDLS
+
   ;
+  
+ENDLS:
+  ENDLS ENDL
+  {
+    line_num++;
+  }
+  | ENDL
+  {
+    line_num++;
+  }
+  ;
+
 
 /* An instruction, in our toy assembly, is always an identifier (which
  * is the instruction name) and possibly arguments. The numbers in the
@@ -77,6 +127,7 @@ line
   label operation
   | label
   | operation
+  | TOKEN_COMM
   ;
 
 operation
@@ -85,8 +136,84 @@ operation
   ;
 
 instruction:
+  TOKEN_HALT
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,NULL,NULL));}
+  | TOKEN_INT
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,NULL,NULL));}
+  | TOKEN_IRET
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,NULL,NULL));}
+  | TOKEN_CALL operand
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $2, NULL, NULL));}
+  | TOKEN_RET
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,NULL,NULL));}
+  | TOKEN_JMP operand
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $2, NULL, NULL));}
+  | TOKEN_BEQ TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER TOKEN_COMMA operand
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $6, $2, $4));}
+  | TOKEN_BNE TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER TOKEN_COMMA operand
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $6, $2, $4));}
+  | TOKEN_BGT TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER TOKEN_COMMA operand
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $6, $2, $4));}
+  | TOKEN_PUSH TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,NULL));}
+  | TOKEN_POP TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,NULL));}
+  | TOKEN_XCHG TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  | TOKEN_ADD TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  | TOKEN_SUB TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  | TOKEN_MUL TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  | TOKEN_DIV TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  | TOKEN_NOT TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,NULL));}
+  | TOKEN_AND TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  | TOKEN_OR TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  | TOKEN_XOR TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  | TOKEN_SHL TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  | TOKEN_SHR TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  | TOKEN_LD operand TOKEN_COMMA TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $2, $4, NULL));}
+  | TOKEN_ST TOKEN_GP_REGISTER TOKEN_COMMA operand
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $4, $2, NULL));}
+  | TOKEN_CSRRD TOKEN_CS_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  | TOKEN_CSRWR TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_CS_REGISTER
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  ;
 
-
+operand:
+  TOKEN_IMM TOKEN_LITERAL
+  { $$ = new Addressing("imm", $2, NULL, NULL);}
+  | TOKEN_IMM TOKEN_SYMBOL
+  { $$ = new Addressing("imm", NULL, $2, NULL);}
+  | TOKEN_LITERAL
+  { $$ = new Addressing("memdir", $1, NULL, NULL);}//kod skoka ima drugacije znacenje
+  | TOKEN_SYMBOL
+  { $$ = new Addressing("memdir", NULL, $1, NULL);}//kod skoka ima drugacije znacenje, prepoznati da li je instrukcija skoka
+  | TOKEN_GP_REGISTER
+  { $$ = new Addressing("regdir", NULL, NULL, $1);}
+  | TOKEN_LSQB TOKEN_GP_REGISTER TOKEN_RSQB 
+  { $$ = new Addressing("regind", NULL, NULL, $2);}
+  | TOKEN_LSQB TOKEN_CS_REGISTER TOKEN_RSQB
+  { $$ = new Addressing("regind", NULL, NULL, $2);}
+  | TOKEN_LSQB TOKEN_GP_REGISTER TOKEN_PLUS TOKEN_LITERAL TOKEN_RSQB 
+  { $$ = new Addressing("regindpom", $4, NULL, $2);}
+  | TOKEN_LSQB TOKEN_CS_REGISTER TOKEN_PLUS TOKEN_LITERAL TOKEN_RSQB
+  { $$ = new Addressing("regindpom", $4, NULL, $2);}
+  | TOKEN_LSQB TOKEN_GP_REGISTER TOKEN_PLUS TOKEN_SYMBOL TOKEN_RSQB
+  { $$ = new Addressing("regindpom", NULL, $4, $2);}
+  | TOKEN_LSQB TOKEN_CS_REGISTER TOKEN_PLUS TOKEN_SYMBOL TOKEN_RSQB
+  { $$ = new Addressing("regindpom", NULL, $4, $2);}
+  ;
 label:
   TOKEN_LABEL
   {list_of_lang_elems->push_back(new Directive(line_num, $1, NULL));}

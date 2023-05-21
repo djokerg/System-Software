@@ -13,6 +13,8 @@ class Directive: public Lang_Elem {
       this->arg_list = arg_list;
     }
 
+    
+
     void print_directive(){
       cout << this->line_num;
       cout << mnemonic << " ";
@@ -26,6 +28,11 @@ class Directive: public Lang_Elem {
       }
       }
     }
+
+    void print_le(){
+      print_directive();
+    }
+
     ~Directive(){
       free(arg_list);
     }
