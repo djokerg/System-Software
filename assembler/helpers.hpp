@@ -4,7 +4,7 @@
 
 struct arg{
 	char* sym;
-	int num = 0;//default, ne koristi se trenutno
+	int num;//default, ne koristi se trenutno
 	arg* next;
 };
 
@@ -13,6 +13,6 @@ extern struct arg* global_arg;
 extern FILE* myfile;
 char* copy_str(const char*);
 
-struct arg* mk_argument(char*);
+struct arg* mk_argument(char*,int);
 
 void free_args(struct arg *args);

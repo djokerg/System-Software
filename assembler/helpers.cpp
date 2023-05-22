@@ -19,11 +19,12 @@ copy_str(const char *in)
 }
 
 struct arg*
-mk_argument(char *sym)
+mk_argument(char *sym,int num)
 {
 	struct arg* a = (arg*)malloc(sizeof(struct arg));
 	a->sym = sym;
-	a->next = NULL;
+	a->num = num;
+	a->next = nullptr;
 	return a;
 }
 void

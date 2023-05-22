@@ -44,7 +44,7 @@
 //%token <num>   TOKEN_NUM
 %token <symbol> TOKEN_SYMBOL
 %token <symbol> TOKEN_LABEL
-%token <symbol> TOKEN_LITERAL
+%token <num> TOKEN_LITERAL
 %token <symbol> TOKEN_STRING
 /* These are non-terminals in our grammar, by which I mean, parser
  * rules down below. Each of these also has a meaningful return type,
@@ -77,7 +77,7 @@
 %token <symbol> TOKEN_CSRWR
 
 
-%token <symbol> TOKEN_GP_REGISTER
+%token <num> TOKEN_GP_REGISTER
 %token <symbol> TOKEN_CS_REGISTER
 
 %token TOKEN_IMM;
@@ -101,7 +101,7 @@ prog
 : 
 line ENDLS
 | prog line ENDLS
-
+| prog line
   ;
   
 ENDLS:
@@ -135,19 +135,19 @@ operation
 | instruction
   ;
 
-instruction:
+instruction://line, mnemonic, adr, gpr1,gpr2,csr
   TOKEN_HALT
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,NULL,NULL));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1));}
   | TOKEN_INT
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,NULL,NULL));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1));}
   | TOKEN_IRET
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,NULL,NULL));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1));}
   | TOKEN_CALL operand
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $2, NULL, NULL));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $2));}
   | TOKEN_RET
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,NULL,NULL));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1));}
   | TOKEN_JMP operand
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $2, NULL, NULL));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $2));}
   | TOKEN_BEQ TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER TOKEN_COMMA operand
   { list_of_lang_elems->push_back(new Instruction(line_num, $1, $6, $2, $4));}
   | TOKEN_BNE TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER TOKEN_COMMA operand
@@ -155,107 +155,114 @@ instruction:
   | TOKEN_BGT TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER TOKEN_COMMA operand
   { list_of_lang_elems->push_back(new Instruction(line_num, $1, $6, $2, $4));}
   | TOKEN_PUSH TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,NULL));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2));}
   | TOKEN_POP TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,NULL));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2));}
   | TOKEN_XCHG TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
   | TOKEN_ADD TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
   | TOKEN_SUB TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
   | TOKEN_MUL TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
   | TOKEN_DIV TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
   | TOKEN_NOT TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,NULL));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2));}
   | TOKEN_AND TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
   | TOKEN_OR TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
   | TOKEN_XOR TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
   | TOKEN_SHL TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
   | TOKEN_SHR TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
   | TOKEN_LD operand TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $2, $4, NULL));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $2, $4));}
   | TOKEN_ST TOKEN_GP_REGISTER TOKEN_COMMA operand
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $4, $2, NULL));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $4, $2));}
   | TOKEN_CSRRD TOKEN_CS_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$4,-1,$2));}
   | TOKEN_CSRWR TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_CS_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,NULL,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,-1,$4));}
   ;
 
-operand:
+//ovakvo tumacenje operanada vazi samo za instrukcije sa podacima, instrukcije skoka imaju drugacije timacenje
+operand://literal,symbol, gpr, crs, isCsr
   TOKEN_IMM TOKEN_LITERAL
-  { $$ = new Addressing("imm", $2, NULL, NULL);}
+  { $$ = new Addressing("imm", $2);}
   | TOKEN_IMM TOKEN_SYMBOL
-  { $$ = new Addressing("imm", NULL, $2, NULL);}
+  { $$ = new Addressing("imm", -1, $2);}
   | TOKEN_LITERAL
-  { $$ = new Addressing("memdir", $1, NULL, NULL);}//kod skoka ima drugacije znacenje
+  { $$ = new Addressing("memdir", $1);}//kod skoka ima drugacije znacenje
   | TOKEN_SYMBOL
-  { $$ = new Addressing("memdir", NULL, $1, NULL);}//kod skoka ima drugacije znacenje, prepoznati da li je instrukcija skoka
+  { $$ = new Addressing("memdir", -1, $1);}//kod skoka ima drugacije znacenje, prepoznati da li je instrukcija skoka
   | TOKEN_GP_REGISTER
-  { $$ = new Addressing("regdir", NULL, NULL, $1);}
+  { $$ = new Addressing("regdir", -1, nullptr, $1);}
+  | TOKEN_CS_REGISTER
+  { $$ = new Addressing("regdir", -1, nullptr,-1, $1, true);}
   | TOKEN_LSQB TOKEN_GP_REGISTER TOKEN_RSQB 
-  { $$ = new Addressing("regind", NULL, NULL, $2);}
+  { $$ = new Addressing("regind", -1, nullptr, $2);}
   | TOKEN_LSQB TOKEN_CS_REGISTER TOKEN_RSQB
-  { $$ = new Addressing("regind", NULL, NULL, $2);}
+  { $$ = new Addressing("regind", -1, nullptr, -1, $2, true);}
   | TOKEN_LSQB TOKEN_GP_REGISTER TOKEN_PLUS TOKEN_LITERAL TOKEN_RSQB 
-  { $$ = new Addressing("regindpom", $4, NULL, $2);}
+  { $$ = new Addressing("regindpom", $4, nullptr , $2);}
   | TOKEN_LSQB TOKEN_CS_REGISTER TOKEN_PLUS TOKEN_LITERAL TOKEN_RSQB
-  { $$ = new Addressing("regindpom", $4, NULL, $2);}
+  { $$ = new Addressing("regindpom", $4, nullptr, -1, $2, true);}
   | TOKEN_LSQB TOKEN_GP_REGISTER TOKEN_PLUS TOKEN_SYMBOL TOKEN_RSQB
-  { $$ = new Addressing("regindpom", NULL, $4, $2);}
+  { $$ = new Addressing("regindpom", -1, $4, $2);}
   | TOKEN_LSQB TOKEN_CS_REGISTER TOKEN_PLUS TOKEN_SYMBOL TOKEN_RSQB
-  { $$ = new Addressing("regindpom", NULL, $4, $2);}
+  { $$ = new Addressing("regindpom", -1, $4, -1, $2, true);}
   ;
 label:
   TOKEN_LABEL
-  {list_of_lang_elems->push_back(new Directive(line_num, $1, NULL));}
+  {list_of_lang_elems->push_back(new Directive(line_num, $1));}
 ;
-
+//line,mnemonic, arglist, vektor ima dva 
 directive
 : TOKEN_GLOBAL list_symbol
 {  
   struct arg* arg_list = $2;
-  vector<string>* arg_vector = new vector<string>();
+  vector<pair<bool, Uni>>* arg_vector = new vector<pair<bool, Uni>>();
   while(arg_list){
-    arg_vector->push_back(arg_list->sym);
+    arg_vector->push_back(make_pair(false, (Uni){.sym = arg_list->sym}));
     arg_list= arg_list->next;
   }
   free_args(global_arg);
-  global_arg = NULL;
+  global_arg = nullptr;
   list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
   }
   | TOKEN_EXTERN list_symbol
-  {
-    struct arg* arg_list = $2;
-  vector<string>* arg_vector = new vector<string>();
+  {  
+  struct arg* arg_list = $2;
+  vector<pair<bool, Uni>>* arg_vector = new vector<pair<bool, Uni>>();
   while(arg_list){
-    arg_vector->push_back(arg_list->sym);
+    arg_vector->push_back(make_pair(false, (Uni){.sym = arg_list->sym}));
     arg_list= arg_list->next;
   }
   free_args(global_arg);
-  global_arg = NULL;
+  global_arg = nullptr;
   list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
   }
   | TOKEN_SECTION TOKEN_SYMBOL
   {
-    vector<string>* arg_vector = new vector<string>();
-    arg_vector->push_back($2);
+    vector<pair<bool, Uni>>* arg_vector = new vector<pair<bool, Uni>>();
+    arg_vector->push_back(make_pair(false, (Uni){.sym = $2}));
     list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
   }
   | TOKEN_WORD list_literal_or_symbol
   {
-    struct arg* arg_list = $2;
-  vector<string>* arg_vector = new vector<string>();
+  struct arg* arg_list = $2;
+  vector<pair<bool, Uni>>* arg_vector = new vector<pair<bool, Uni>>();
   while(arg_list){
-    arg_vector->push_back(arg_list->sym);
+    if(arg_list->sym){
+      arg_vector->push_back(make_pair(false, (Uni){.sym = arg_list->sym}));
+    }else{
+      arg_vector->push_back(make_pair(true, (Uni){.num = arg_list->num}));
+    }
     arg_list= arg_list->next;
   }
   free_args(global_arg);
@@ -264,19 +271,19 @@ directive
   }
   | TOKEN_SKIP TOKEN_LITERAL
   {
-    vector<string>* arg_vector = new vector<string>();
-    arg_vector->push_back($2);
+    vector<pair<bool, Uni>>* arg_vector = new vector<pair<bool, Uni>>();
+    arg_vector->push_back(make_pair(true, (Uni){.num = $2}));
     list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
   }
   | TOKEN_ASCII TOKEN_STRING
   {
-    vector<string>* arg_vector = new vector<string>();
-    arg_vector->push_back($2);
+    vector<pair<bool, Uni>>* arg_vector = new vector<pair<bool, Uni>>();
+    arg_vector->push_back(make_pair(false, (Uni){.sym = $2}));
     list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
   }
   | TOKEN_END
   {
-    list_of_lang_elems->push_back(new Directive(line_num, $1, NULL));
+    list_of_lang_elems->push_back(new Directive(line_num, $1));
   }
 ;
 /* An argument in this case has multiple choices: it can be a register
@@ -293,9 +300,9 @@ list_literal_or_symbol
 : TOKEN_LITERAL 
 { 
   if(global_arg == NULL){
-    global_arg = mk_argument($1);
+    global_arg = mk_argument(nullptr, $1);
   }else{
-    global_arg->next = mk_argument($1);
+    global_arg->next = mk_argument(nullptr,$1);
     global_arg = global_arg->next;
   }
   $$ = global_arg;
@@ -303,28 +310,28 @@ list_literal_or_symbol
 | TOKEN_SYMBOL
 { 
   if(global_arg == NULL){
-    global_arg = mk_argument($1);
+    global_arg = mk_argument($1, -1);
   }else{
-    global_arg->next = mk_argument($1);
+    global_arg->next = mk_argument($1, -1);
     global_arg = global_arg->next;
   }
   $$ = global_arg;
 }
 | list_literal_or_symbol TOKEN_COMMA TOKEN_LITERAL 
-{   
+{ 
   if(global_arg == NULL){
-    global_arg = mk_argument($3);
+    global_arg = mk_argument(nullptr, $3);
   }else{
-    global_arg->next = mk_argument($3);
+    global_arg->next = mk_argument(nullptr,$3);
     global_arg = global_arg->next;
   }
 }
 | list_literal_or_symbol TOKEN_COMMA TOKEN_SYMBOL
 {   
   if(global_arg == NULL){
-    global_arg = mk_argument($3);
+    global_arg = mk_argument($3, -1);
   }else{
-    global_arg->next = mk_argument($3);
+    global_arg->next = mk_argument($3, -1);
     global_arg = global_arg->next;
   }
 }
@@ -333,9 +340,9 @@ list_symbol
 : TOKEN_SYMBOL
 { 
   if(global_arg == NULL){
-    global_arg = mk_argument($1);
+    global_arg = mk_argument($1, -1);
   }else{
-    global_arg->next = mk_argument($1);
+    global_arg->next = mk_argument($1, -1);
     global_arg = global_arg->next;
   }
   $$ = global_arg;
@@ -343,36 +350,11 @@ list_symbol
 | list_symbol TOKEN_COMMA TOKEN_SYMBOL
 {   
   if(global_arg == NULL){
-    global_arg = mk_argument($3);
+    global_arg = mk_argument($3, -1);
   }else{
-    global_arg->next = mk_argument($3);
+    global_arg->next = mk_argument($3, -1);
     global_arg = global_arg->next;
   }
 }
-//ovo kod isntrukcija naci iz primera asemblera
-
-/* arg
-  : TOKEN_LPAR rname[tok] TOKEN_PLUS TOKEN_NUM[num] TOKEN_RPAR
-    { $$ = mk_argument($tok, $num); }
-  | TOKEN_LPAR TOKEN_NUM[num] TOKEN_PLUS rname[tok] TOKEN_RPAR
-    { $$ = mk_argument($tok, $num); }
-  | TOKEN_LPAR rname[tok] TOKEN_RPAR
-    { $$ = mk_argument($tok, 0); }
-  | rname[tok]
-    { $$ = mk_argument($tok, 0); }
-  ; */
-
-/* In this case, I'm being a little bit obtuse: I should encode the
- * register name rule as a regular expression (i.e. all registers could
- * be identified by the regex r.*x) but instead I'm doing a check in the
- * body of the rule and returning out of the generated parser. */
-/* rname
-  : TOKEN_IDENT
-    { if (!is_register($1)) {
-		fprintf(stderr, "bad register name: %s\n", $1);
-	  }
-	  $$ = $1;
-	}
-  ; */
 
 %%

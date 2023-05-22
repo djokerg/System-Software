@@ -4,10 +4,10 @@
 		{
 			"type": "cppbuild",
 			"label": "C/C++: g++ build project (make)",
-			"command": "make all",
+			"command": "make",
 			"args": [],
 			"options": {
-				"cwd": "${workspaceFolder}/misc"
+				"cwd": "${workspaceFolder}/assembler"
 			},
 			"problemMatcher": [
 				"$gcc"

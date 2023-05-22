@@ -5,22 +5,31 @@
 using namespace std;
 class Addressing{
   string type;
-  char* literal;
+  int literal;
   char* symbol;
-  char* reg;
+  int gpr;
+  char* csr;
+  bool isCsr;
   public:
-  Addressing(string type, char* literal, char* symbol, char* reg){
+  Addressing(string type, int literal = -1, char* symbol = nullptr, int gpr = -1, char* csr = nullptr, bool isCsr = false){
     this->type = type;
     this->literal = literal;
     this->symbol = symbol;
-    this->reg = reg;
+    this->gpr = gpr;
+    this->csr = csr;
+    this->isCsr = isCsr;
   }
 
   void print_a(){
     cout << this->type << " ";
-    cout << (literal != nullptr? literal: "");
+    if(literal != -1){
+      cout << literal << " ";
+    }
+    if(gpr != -1){
+      cout << gpr << " ";
+    }
     cout << (symbol != nullptr? symbol: "");
-    cout << (reg != nullptr? reg: "");
+    cout << (csr != nullptr? csr: "");
   }
 };
 

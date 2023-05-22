@@ -355,8 +355,8 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
-#define YY_NUM_RULES 50
-#define YY_END_OF_BUFFER 51
+#define YY_NUM_RULES 51
+#define YY_END_OF_BUFFER 52
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -366,22 +366,22 @@ struct yy_trans_info
 	};
 static const flex_int16_t yy_accept[155] =
     {   0,
-        1,    1,   51,   49,    1,   48,   49,    2,    3,   49,
-        6,   47,   49,   49,   15,   15,   46,    4,    5,   46,
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   46,    1,    0,    2,    0,    0,    0,
-        0,    0,   15,    0,    0,    0,    0,    0,    0,   46,
-       17,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   40,   46,   46,   36,   46,   46,   46,
-       46,   41,   46,   46,   46,   16,    0,    0,   44,   44,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,   15,
-       30,   35,   24,   26,   25,   46,   46,   33,   46,   19,
+        1,    1,   52,   50,    1,   49,   50,    2,    3,   50,
+        6,   48,   50,   50,   15,   15,   47,    4,    5,   47,
+       47,   47,   47,   47,   47,   47,   47,   47,   47,   47,
+       47,   47,   47,   47,    1,    0,    2,    0,    0,    0,
+        0,    0,   15,    0,    0,    0,    0,    0,    0,   47,
+       18,   47,   47,   47,   47,   47,   47,   47,   47,   47,
+       47,   47,   47,   41,   47,   47,   37,   47,   47,   47,
+       47,   42,   47,   47,   47,   17,    0,    0,   45,   45,
+        0,    0,    0,    0,    0,    0,    0,    0,    0,   16,
+       31,   36,   25,   27,   26,   47,   47,   34,   47,   20,
 
-       46,   23,   32,   34,   28,   46,   22,   38,   39,   31,
-       46,   37,    0,    0,    0,    0,   14,   13,    0,    0,
-        0,    0,    0,   21,   46,   46,   18,   20,   27,   29,
-        0,    0,    0,    0,    0,    0,    0,   11,   10,   42,
-       43,   45,    0,    0,   12,    0,    0,    0,    0,    8,
+       47,   24,   33,   35,   29,   47,   23,   39,   40,   32,
+       47,   38,    0,    0,    0,    0,   14,   13,    0,    0,
+        0,    0,    0,   22,   47,   47,   19,   21,   28,   30,
+        0,    0,    0,    0,    0,    0,    0,   11,   10,   43,
+       44,   46,    0,    0,   12,    0,    0,    0,    0,    8,
         7,    0,    9,    0
     } ;
 
@@ -562,7 +562,7 @@ char *yytext;
 #line 4 "lexer.l"
 #include "parser.hpp"
 #include "helpers.hpp"
-#include <string>
+#include <string.h>
 int line_num = 1;
 #line 568 "lexer.cpp"
 /* this tells us that we're going to output our lexer implementation
@@ -964,33 +964,33 @@ case 15:
 YY_RULE_SETUP
 #line 103 "lexer.l"
 {
-     yylval.symbol = copy_str(yytext);
+	yylval.num = atoi(yytext);
 	return TOKEN_LITERAL;
 }
 	YY_BREAK
 case 16:
-/* rule 16 can match eol */
 YY_RULE_SETUP
 #line 107 "lexer.l"
 {
-     yylval.symbol = copy_str(yytext);
-	return TOKEN_STRING;
+	yylval.num = strtol(yytext, NULL, 16);
+	return TOKEN_LITERAL;
 }
 	YY_BREAK
 case 17:
+/* rule 17 can match eol */
 YY_RULE_SETUP
 #line 111 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_LABEL;
+	return TOKEN_STRING;
 }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
 #line 115 "lexer.l"
 {
-	yylval.symbol = copy_str(yytext);
-	return TOKEN_HALT;
+     yylval.symbol = copy_str(yytext);
+	return TOKEN_LABEL;
 }
 	YY_BREAK
 case 19:
@@ -998,7 +998,7 @@ YY_RULE_SETUP
 #line 119 "lexer.l"
 {
 	yylval.symbol = copy_str(yytext);
-	return TOKEN_INT;
+	return TOKEN_HALT;
 }
 	YY_BREAK
 case 20:
@@ -1006,15 +1006,15 @@ YY_RULE_SETUP
 #line 123 "lexer.l"
 {
 	yylval.symbol = copy_str(yytext);
-	return TOKEN_IRET;
+	return TOKEN_INT;
 }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
 #line 127 "lexer.l"
 {
-     yylval.symbol = copy_str(yytext);
-	return TOKEN_CALL;
+	yylval.symbol = copy_str(yytext);
+	return TOKEN_IRET;
 }
 	YY_BREAK
 case 22:
@@ -1022,7 +1022,7 @@ YY_RULE_SETUP
 #line 131 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_RET;
+	return TOKEN_CALL;
 }
 	YY_BREAK
 case 23:
@@ -1030,7 +1030,7 @@ YY_RULE_SETUP
 #line 135 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_JMP;
+	return TOKEN_RET;
 }
 	YY_BREAK
 case 24:
@@ -1038,7 +1038,7 @@ YY_RULE_SETUP
 #line 139 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_BEQ;
+	return TOKEN_JMP;
 }
 	YY_BREAK
 case 25:
@@ -1046,7 +1046,7 @@ YY_RULE_SETUP
 #line 143 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_BNE;
+	return TOKEN_BEQ;
 }
 	YY_BREAK
 case 26:
@@ -1054,7 +1054,7 @@ YY_RULE_SETUP
 #line 147 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_BGT;
+	return TOKEN_BNE;
 }
 	YY_BREAK
 case 27:
@@ -1062,7 +1062,7 @@ YY_RULE_SETUP
 #line 151 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_PUSH;
+	return TOKEN_BGT;
 }
 	YY_BREAK
 case 28:
@@ -1070,7 +1070,7 @@ YY_RULE_SETUP
 #line 155 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_POP;
+	return TOKEN_PUSH;
 }
 	YY_BREAK
 case 29:
@@ -1078,7 +1078,7 @@ YY_RULE_SETUP
 #line 159 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_XCHG;
+	return TOKEN_POP;
 }
 	YY_BREAK
 case 30:
@@ -1086,7 +1086,7 @@ YY_RULE_SETUP
 #line 163 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_ADD;
+	return TOKEN_XCHG;
 }
 	YY_BREAK
 case 31:
@@ -1094,7 +1094,7 @@ YY_RULE_SETUP
 #line 167 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_SUB;
+	return TOKEN_ADD;
 }
 	YY_BREAK
 case 32:
@@ -1102,7 +1102,7 @@ YY_RULE_SETUP
 #line 171 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_MUL;
+	return TOKEN_SUB;
 }
 	YY_BREAK
 case 33:
@@ -1110,7 +1110,7 @@ YY_RULE_SETUP
 #line 175 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_DIV;
+	return TOKEN_MUL;
 }
 	YY_BREAK
 case 34:
@@ -1118,7 +1118,7 @@ YY_RULE_SETUP
 #line 179 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_NOT;
+	return TOKEN_DIV;
 }
 	YY_BREAK
 case 35:
@@ -1126,7 +1126,7 @@ YY_RULE_SETUP
 #line 183 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_AND;
+	return TOKEN_NOT;
 }
 	YY_BREAK
 case 36:
@@ -1134,7 +1134,7 @@ YY_RULE_SETUP
 #line 187 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_OR;
+	return TOKEN_AND;
 }
 	YY_BREAK
 case 37:
@@ -1142,7 +1142,7 @@ YY_RULE_SETUP
 #line 191 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_XOR;
+	return TOKEN_OR;
 }
 	YY_BREAK
 case 38:
@@ -1150,7 +1150,7 @@ YY_RULE_SETUP
 #line 195 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_SHL;
+	return TOKEN_XOR;
 }
 	YY_BREAK
 case 39:
@@ -1158,7 +1158,7 @@ YY_RULE_SETUP
 #line 199 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_SHR;
+	return TOKEN_SHL;
 }
 	YY_BREAK
 case 40:
@@ -1166,7 +1166,7 @@ YY_RULE_SETUP
 #line 203 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_LD;
+	return TOKEN_SHR;
 }
 	YY_BREAK
 case 41:
@@ -1174,7 +1174,7 @@ YY_RULE_SETUP
 #line 207 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_ST;
+	return TOKEN_LD;
 }
 	YY_BREAK
 case 42:
@@ -1182,7 +1182,7 @@ YY_RULE_SETUP
 #line 211 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_CSRRD;
+	return TOKEN_ST;
 }
 	YY_BREAK
 case 43:
@@ -1190,55 +1190,71 @@ YY_RULE_SETUP
 #line 215 "lexer.l"
 {
      yylval.symbol = copy_str(yytext);
-	return TOKEN_CSRWR;
+	return TOKEN_CSRRD;
 }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
 #line 219 "lexer.l"
 {
-	yylval.symbol = copy_str(yytext);
-	return TOKEN_GP_REGISTER;
+     yylval.symbol = copy_str(yytext);
+	return TOKEN_CSRWR;
 }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
 #line 223 "lexer.l"
 {
-	yylval.symbol = copy_str(yytext);
-	return TOKEN_CS_REGISTER;
+	if(!strcmp(yytext,"%sp")){
+		yylval.num = 14;
+		return TOKEN_GP_REGISTER;
+	}
+	if(!strcmp(yytext,"%pc")){
+		yylval.num = 15;
+		return TOKEN_GP_REGISTER;
+	}
+	yylval.num = atoi(yytext+2);
+	return TOKEN_GP_REGISTER;
 }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 227 "lexer.l"
+#line 235 "lexer.l"
+{
+	yylval.symbol = copy_str(yytext+1);
+	return TOKEN_CS_REGISTER;
+}
+	YY_BREAK
+case 47:
+YY_RULE_SETUP
+#line 239 "lexer.l"
 {
 	yylval.symbol = copy_str(yytext);
 	return TOKEN_SYMBOL;
 }
 	YY_BREAK
-case 47:
+case 48:
 YY_RULE_SETUP
-#line 232 "lexer.l"
+#line 244 "lexer.l"
 { return TOKEN_COMMA; }
 	YY_BREAK
-case 48:
-/* rule 48 can match eol */
-YY_RULE_SETUP
-#line 234 "lexer.l"
-{ return ENDL;}
-	YY_BREAK
 case 49:
+/* rule 49 can match eol */
 YY_RULE_SETUP
-#line 235 "lexer.l"
-{}
+#line 246 "lexer.l"
+{ return ENDL;}
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 236 "lexer.l"
+#line 247 "lexer.l"
+{}
+	YY_BREAK
+case 51:
+YY_RULE_SETUP
+#line 248 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 1242 "lexer.cpp"
+#line 1258 "lexer.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2243,7 +2259,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 236 "lexer.l"
+#line 248 "lexer.l"
 
 
 /* In the event of some kind of error, this will get called. */

@@ -2,31 +2,43 @@
 #include "lang_elem.hpp"
 #include <vector>
 #include <iostream>
+#include <map>
 using namespace std;
 
+union Uni{
+  int num;
+  char* sym;
+};
+
 class Directive: public Lang_Elem {
+  vector<pair<bool, Uni>>* arg_list;
   string mnemonic;
-  vector<string>* arg_list;
   public:
-    Directive(int line_n, string id, vector<string>* arg_list):Lang_Elem(line_n){
-      this->mnemonic = id;
+    Directive(int line_n, string mnemonic, vector<pair<bool, Uni>>* arg_list = nullptr):Lang_Elem(line_n){
+      this->mnemonic = mnemonic;
       this->arg_list = arg_list;
     }
-
-    
-
     void print_directive(){
-      cout << this->line_num;
+      cout << this->line_num << " ";
       cout << mnemonic << " ";
       if(arg_list != NULL){
       for(int i = 0; i < arg_list->size();i++){
         if(i != arg_list->size()-1){
-        cout << arg_list->at(i) << ",";
+          if(arg_list->at(i).first){
+            cout << arg_list->at(i).second.num << ",";
+          }else{
+            cout << arg_list->at(i).second.sym << ",";
+          }
         }else{
-          cout << arg_list->at(i) << "\n";
+          if(arg_list->at(i).first){
+            cout << arg_list->at(i).second.num;
+          }else{
+            cout << arg_list->at(i).second.sym;
+          }
         }
       }
       }
+      cout << "\n";
     }
 
     void print_le(){

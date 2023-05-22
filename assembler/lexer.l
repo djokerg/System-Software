@@ -3,7 +3,7 @@
 %{
 #include "parser.hpp"
 #include "helpers.hpp"
-#include <string>
+#include <string.h>
 int line_num = 1;
 %}
 
@@ -100,8 +100,12 @@ CS_REGISTER %(status|handler|cause)
      yylval.symbol = copy_str(yytext);
 		return TOKEN_END;
 }
-{LITERAL} {
-     yylval.symbol = copy_str(yytext);
+{LITERAL_DECIMAL} {
+	yylval.num = atoi(yytext);
+	return TOKEN_LITERAL;
+}
+{LITERAL_HEXADECIMAL} {
+	yylval.num = strtol(yytext, NULL, 16);
 	return TOKEN_LITERAL;
 }
 {STRING} {
@@ -217,11 +221,19 @@ csrwr {
 	return TOKEN_CSRWR;
 }
 {GP_REGISTER} {
-	yylval.symbol = copy_str(yytext);
+	if(!strcmp(yytext,"%sp")){
+		yylval.num = 14;
+		return TOKEN_GP_REGISTER;
+	}
+	if(!strcmp(yytext,"%pc")){
+		yylval.num = 15;
+		return TOKEN_GP_REGISTER;
+	}
+	yylval.num = atoi(yytext+2);
 	return TOKEN_GP_REGISTER;
 }
 {CS_REGISTER} {
-	yylval.symbol = copy_str(yytext);
+	yylval.symbol = copy_str(yytext+1);
 	return TOKEN_CS_REGISTER;
 }
 {SYMBOL} {
