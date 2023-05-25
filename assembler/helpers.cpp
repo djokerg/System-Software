@@ -5,7 +5,7 @@
 
 #define MAX_IDENT_SIZE 64
 
-vector<Lang_Elem*>* list_of_lang_elems = NULL;
+vector<Lang_Elem*>* list_of_lang_elems = nullptr;
 struct arg* global_arg;
 
 char*

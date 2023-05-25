@@ -7,6 +7,8 @@ csrwr %r1, %handler
 ld $0x1, %r1
 st %r1, tim_cfg
 jmp 0x57789
+.skip 10
+.ascii "Alo majmune"
 wait:
 ld my_counter, %r1
 ld $5, %r2
@@ -16,4 +18,5 @@ halt
 .section my_data
 my_counter:
 .word 0x57
+.ascii "Hi\n"
 .end

@@ -1,7 +1,7 @@
 #include <vector>
-#include "../assembler/directive.hpp"
+#include "directive.hpp"
 #include "instruction.hpp"
-
+//helper fajl za lekser i parser. sve potrebno se nalazi u listi u main datoteci
 struct arg{
 	char* sym;
 	int num;//default, ne koristi se trenutno

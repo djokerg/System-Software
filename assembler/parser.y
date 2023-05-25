@@ -24,9 +24,7 @@
 
 /* These define the tokens that we use in the lexer.
  * All of these have no meaningful return value. */
-%token TOKEN_COMMA
-%token ENDL
-%token TOKEN_COMM
+
 %token <symbol> TOKEN_GLOBAL
 %token <symbol> TOKEN_EXTERN
 %token <symbol> TOKEN_SECTION
@@ -35,20 +33,7 @@
 %token <symbol> TOKEN_ASCII
 %token <symbol> TOKEN_EQU
 %token <symbol> TOKEN_END
-/* These are ALSO used in the lexer, but in addition to
- * being tokens, they also have return values associated
- * with them. We name those according to the names we used
- * above, in the %union declaration. So, the TOKEN_NUM
- * rule will return a value of the same type as num, which
- * (in this case) is an int. */
-//%token <num>   TOKEN_NUM
-%token <symbol> TOKEN_SYMBOL
-%token <symbol> TOKEN_LABEL
-%token <num> TOKEN_LITERAL
-%token <symbol> TOKEN_STRING
-/* These are non-terminals in our grammar, by which I mean, parser
- * rules down below. Each of these also has a meaningful return type,
- * which is declared in the same way. */
+
 %token <symbol> TOKEN_HALT
 %token <symbol> TOKEN_INT
 %token <symbol> TOKEN_IRET
@@ -80,10 +65,27 @@
 %token <num> TOKEN_GP_REGISTER
 %token <symbol> TOKEN_CS_REGISTER
 
+%token TOKEN_COMMA
+%token ENDL
+%token TOKEN_COMM
 %token TOKEN_IMM;
 %token TOKEN_LSQB;
 %token TOKEN_RSQB;
 %token TOKEN_PLUS;
+/* These are ALSO used in the lexer, but in addition to
+ * being tokens, they also have return values associated
+ * with them. We name those according to the names we used
+ * above, in the %union declaration. So, the TOKEN_NUM
+ * rule will return a value of the same type as num, which
+ * (in this case) is an int. */
+//%token <num>   TOKEN_NUM
+%token <symbol> TOKEN_SYMBOL
+%token <symbol> TOKEN_LABEL
+%token <num> TOKEN_LITERAL
+%token <symbol> TOKEN_STRING
+/* These are non-terminals in our grammar, by which I mean, parser
+ * rules down below. Each of these also has a meaningful return type,
+ * which is declared in the same way. */
 
 %type <arg> list_symbol;
 %type <arg> list_literal_or_symbol;
@@ -101,7 +103,11 @@ prog
 : 
 line ENDLS
 | prog line ENDLS
-| prog line
+| prog TOKEN_END
+  {
+    list_of_lang_elems->push_back(new Directive(TOKEN_END, line_num, $2));
+  }
+{}
   ;
   
 ENDLS:
@@ -137,57 +143,57 @@ operation
 
 instruction://line, mnemonic, adr, gpr1,gpr2,csr
   TOKEN_HALT
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_HALT, line_num, $1));}
   | TOKEN_INT
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_INT, line_num, $1));}
   | TOKEN_IRET
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_IRET, line_num, $1));}
   | TOKEN_CALL operand
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $2));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_CALL, line_num, $1, $2));}
   | TOKEN_RET
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_RET, line_num, $1));}
   | TOKEN_JMP operand
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $2));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_JMP, line_num, $1, $2));}
   | TOKEN_BEQ TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER TOKEN_COMMA operand
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $6, $2, $4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_BEQ,line_num, $1, $6, $2, $4));}
   | TOKEN_BNE TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER TOKEN_COMMA operand
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $6, $2, $4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_BNE, line_num, $1, $6, $2, $4));}
   | TOKEN_BGT TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER TOKEN_COMMA operand
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $6, $2, $4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_BGT,line_num, $1, $6, $2, $4));}
   | TOKEN_PUSH TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_PUSH,line_num, $1,nullptr,$2));}
   | TOKEN_POP TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_POP,line_num, $1,nullptr,$2));}
   | TOKEN_XCHG TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_XCHG,line_num, $1,nullptr,$2,$4));}
   | TOKEN_ADD TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_ADD,line_num, $1,nullptr,$2,$4));}
   | TOKEN_SUB TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_SUB,line_num, $1,nullptr,$2,$4));}
   | TOKEN_MUL TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_MUL,line_num, $1,nullptr,$2,$4));}
   | TOKEN_DIV TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_DIV,line_num, $1,nullptr,$2,$4));}
   | TOKEN_NOT TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_NOT,line_num, $1,nullptr,$2));}
   | TOKEN_AND TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_AND,line_num, $1,nullptr,$2,$4));}
   | TOKEN_OR TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_OR,line_num, $1,nullptr,$2,$4));}
   | TOKEN_XOR TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_XOR,line_num, $1,nullptr,$2,$4));}
   | TOKEN_SHL TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_SHL,line_num, $1,nullptr,$2,$4));}
   | TOKEN_SHR TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,$4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_SHR,line_num, $1,nullptr,$2,$4));}
   | TOKEN_LD operand TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $2, $4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_LD,line_num, $1, $2, $4));}
   | TOKEN_ST TOKEN_GP_REGISTER TOKEN_COMMA operand
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1, $4, $2));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_ST,line_num, $1, $4, $2));}
   | TOKEN_CSRRD TOKEN_CS_REGISTER TOKEN_COMMA TOKEN_GP_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$4,-1,$2));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_CSRRD,line_num, $1,nullptr,$4,-1,$2));}
   | TOKEN_CSRWR TOKEN_GP_REGISTER TOKEN_COMMA TOKEN_CS_REGISTER
-  { list_of_lang_elems->push_back(new Instruction(line_num, $1,nullptr,$2,-1,$4));}
+  { list_of_lang_elems->push_back(new Instruction(TOKEN_CSRWR,line_num, $1,nullptr,$2,-1,$4));}
   ;
 
 //ovakvo tumacenje operanada vazi samo za instrukcije sa podacima, instrukcije skoka imaju drugacije timacenje
@@ -219,7 +225,10 @@ operand://literal,symbol, gpr, crs, isCsr
   ;
 label:
   TOKEN_LABEL
-  {list_of_lang_elems->push_back(new Directive(line_num, $1));}
+  {
+    string mnemonic = $1;
+    mnemonic.pop_back();
+    list_of_lang_elems->push_back(new Directive(TOKEN_LABEL,line_num, mnemonic));}
 ;
 //line,mnemonic, arglist, vektor ima dva 
 directive
@@ -233,7 +242,7 @@ directive
   }
   free_args(global_arg);
   global_arg = nullptr;
-  list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
+  list_of_lang_elems->push_back(new Directive(TOKEN_GLOBAL,line_num, $1, arg_vector));
   }
   | TOKEN_EXTERN list_symbol
   {  
@@ -245,13 +254,13 @@ directive
   }
   free_args(global_arg);
   global_arg = nullptr;
-  list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
+  list_of_lang_elems->push_back(new Directive(TOKEN_EXTERN,line_num, $1, arg_vector));
   }
   | TOKEN_SECTION TOKEN_SYMBOL
   {
     vector<pair<bool, Uni>>* arg_vector = new vector<pair<bool, Uni>>();
     arg_vector->push_back(make_pair(false, (Uni){.sym = $2}));
-    list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
+    list_of_lang_elems->push_back(new Directive(TOKEN_SECTION,line_num, $1, arg_vector));
   }
   | TOKEN_WORD list_literal_or_symbol
   {
@@ -267,23 +276,19 @@ directive
   }
   free_args(global_arg);
   global_arg = NULL;
-  list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
+  list_of_lang_elems->push_back(new Directive(TOKEN_WORD,line_num, $1, arg_vector));
   }
   | TOKEN_SKIP TOKEN_LITERAL
   {
     vector<pair<bool, Uni>>* arg_vector = new vector<pair<bool, Uni>>();
     arg_vector->push_back(make_pair(true, (Uni){.num = $2}));
-    list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
+    list_of_lang_elems->push_back(new Directive(TOKEN_SKIP,line_num, $1, arg_vector));
   }
   | TOKEN_ASCII TOKEN_STRING
   {
     vector<pair<bool, Uni>>* arg_vector = new vector<pair<bool, Uni>>();
     arg_vector->push_back(make_pair(false, (Uni){.sym = $2}));
-    list_of_lang_elems->push_back(new Directive(line_num, $1, arg_vector));
-  }
-  | TOKEN_END
-  {
-    list_of_lang_elems->push_back(new Directive(line_num, $1));
+    list_of_lang_elems->push_back(new Directive(TOKEN_ASCII,line_num, $1, arg_vector));
   }
 ;
 /* An argument in this case has multiple choices: it can be a register

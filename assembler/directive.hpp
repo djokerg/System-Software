@@ -1,10 +1,14 @@
+#ifndef DIRECTIVE_HPP
+#define DIRECTIVE_HPP
+
 #include <string>
 #include "lang_elem.hpp"
 #include <vector>
 #include <iostream>
 #include <map>
-using namespace std;
+#include "parser.hpp"
 
+using namespace std;
 union Uni{
   int num;
   char* sym;
@@ -13,11 +17,15 @@ union Uni{
 class Directive: public Lang_Elem {
   vector<pair<bool, Uni>>* arg_list;
   string mnemonic;
+  yytokentype token_type;
   public:
-    Directive(int line_n, string mnemonic, vector<pair<bool, Uni>>* arg_list = nullptr):Lang_Elem(line_n){
+
+    Directive(yytokentype token_type, int line_n, string mnemonic, vector<pair<bool, Uni>>* arg_list = nullptr):Lang_Elem(line_n){
       this->mnemonic = mnemonic;
       this->arg_list = arg_list;
+      this->token_type = token_type;
     }
+
     void print_directive(){
       cout << this->line_num << " ";
       cout << mnemonic << " ";
@@ -45,7 +53,14 @@ class Directive: public Lang_Elem {
       print_directive();
     }
 
+    bool visit_first_pass() override;
+
+    bool visit_second_pass() override;
+
+
     ~Directive(){
       free(arg_list);
     }
 };
+
+#endif
