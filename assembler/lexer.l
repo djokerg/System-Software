@@ -89,6 +89,7 @@ CS_REGISTER %(status|handler|cause)
 		return TOKEN_SKIP;
 }
 {ASCII} {
+	//obraditi ovde yytext, ili unaprediti ovu copy_str funkciju
      yylval.symbol = copy_str(yytext);
 		return TOKEN_ASCII;
 }

@@ -6,11 +6,12 @@
 #include <fstream>
 #include <iomanip>
 #include "directive.hpp"
-#include "instruction.hpp"
+
 using namespace std;
 class Directive;
 class Instruction;
 class Lang_Elem;
+class Addressing;
 
 class Assembler{
   friend class Directive;
@@ -42,6 +43,7 @@ class Assembler{
     int offset;
     string type;
     string symbol;
+    string section_bind_to_reloc;
     int addend;
   };
 
@@ -59,8 +61,6 @@ class Assembler{
 
   ofstream debugging_file;
   bool error_not_happened = true;
-  
-  void print_section_table();
 
   bool process_label_first_pass(string label_name, int line_num);
 
@@ -81,6 +81,14 @@ class Assembler{
   bool process_end_directive(int line_num);
 
   bool process_skip_second_pass(int value);
+
+  bool process_word_second_pass(pair<bool, Uni> argument, int line_num);
+
+  bool process_ascii_second_pass(string argument, int line_num);//nije neophodan broj linije
+
+  bool process_section_second_pass(string section);
+
+  bool process_instruction_second_pass(string mnemonic, int line_n, Addressing* addr, int gpr1, int gpr2, char* csr);
 
   map<int, string> errors_to_print;//int shows line, string is message about that line
 
@@ -105,6 +113,9 @@ public:
   }
 
   void print_symbol_table();
+  void print_section_table();
+  void print_reloc_table();
+  void print_sections_data();
 
 };
 

@@ -17,6 +17,6 @@ halt
 .global my_counter
 .section my_data
 my_counter:
-.word 0x57
-.ascii "Hi\n"
+.word wait
+.ascii "Hi"
 .end
