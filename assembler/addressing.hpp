@@ -3,15 +3,26 @@
 #include <iostream>
 #include <string>
 using namespace std;
+class Assembler;
+
+enum Addr_Type{
+  IMMED = 0,
+  MEMDIR,
+  REGDIR,
+  REGIND,
+  REGINDPOM
+};
+
 class Addressing{
-  string type;
+  friend class Assembler;
+  Addr_Type type;
   int literal;
   char* symbol;
   int gpr;
-  char* csr;
+  int csr;
   bool isCsr;
   public:
-  Addressing(string type, int literal = -1, char* symbol = nullptr, int gpr = -1, char* csr = nullptr, bool isCsr = false){
+  Addressing(Addr_Type type, int literal = -1, char* symbol = nullptr, int gpr = -1, int csr = -1, bool isCsr = false){
     this->type = type;
     this->literal = literal;
     this->symbol = symbol;
@@ -19,9 +30,8 @@ class Addressing{
     this->csr = csr;
     this->isCsr = isCsr;
   }
-
+  //delete this
   void print_a(){
-    cout << this->type << " ";
     if(literal != -1){
       cout << literal << " ";
     }
@@ -29,7 +39,9 @@ class Addressing{
       cout << gpr << " ";
     }
     cout << (symbol != nullptr? symbol: "");
-    cout << (csr != nullptr? csr: "");
+    if(csr != -1){
+      cout << csr << " ";
+    }
   }
 };
 

@@ -9,6 +9,7 @@ csrwr %r1, %handler
 ld $0x1, %r1
 st %r1, tim_cfg
 wait:
+.word 0xaaaaaaaa
 ld my_counter, %r1
 ld $5, %r2
 bne %r1, %r2, wait

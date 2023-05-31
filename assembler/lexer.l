@@ -41,7 +41,7 @@ EQU \.equ
 END \.end
 STRING \"[^"]+\"
 LITERAL_DECIMAL -?[0-9]+
-LITERAL_HEXADECIMAL 0x[0-9A-F]+
+LITERAL_HEXADECIMAL 0x[0-9A-Fa-f]+
 LITERAL 0x[0-9A-F]+|-?[0-9]+
 SYMBOL [a-zA-Z][a-zA-Z0-9_]*
 LABEL [a-zA-Z][a-zA-Z0-9_]*:
@@ -234,8 +234,18 @@ csrwr {
 	return TOKEN_GP_REGISTER;
 }
 {CS_REGISTER} {
-	yylval.symbol = copy_str(yytext+1);
-	return TOKEN_CS_REGISTER;
+	if(!strcmp(yytext,"%status")){
+		yylval.num = 0;
+		return TOKEN_CS_REGISTER;
+	}
+	if(!strcmp(yytext,"%handler")){
+		yylval.num = 1;
+		return TOKEN_CS_REGISTER;
+	}
+	if(!strcmp(yytext,"%cause")){
+		yylval.num = 2;
+		return TOKEN_CS_REGISTER;
+	}
 }
 {SYMBOL} {
 	yylval.symbol = copy_str(yytext);

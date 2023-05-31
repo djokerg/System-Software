@@ -63,7 +63,7 @@
 
 
 %token <num> TOKEN_GP_REGISTER
-%token <symbol> TOKEN_CS_REGISTER
+%token <num> TOKEN_CS_REGISTER
 
 %token TOKEN_COMMA
 %token ENDL
@@ -197,31 +197,32 @@ instruction://line, mnemonic, adr, gpr1,gpr2,csr
   ;
 
 //ovakvo tumacenje operanada vazi samo za instrukcije sa podacima, instrukcije skoka imaju drugacije timacenje
+//delete ones with csrregister
 operand://literal,symbol, gpr, crs, isCsr
   TOKEN_IMM TOKEN_LITERAL
-  { $$ = new Addressing("imm", $2);}
+  { $$ = new Addressing(IMMED, $2);}
   | TOKEN_IMM TOKEN_SYMBOL
-  { $$ = new Addressing("imm", -1, $2);}
+  { $$ = new Addressing(IMMED, -1, $2);}
   | TOKEN_LITERAL
-  { $$ = new Addressing("memdir", $1);}//kod skoka ima drugacije znacenje
+  { $$ = new Addressing(MEMDIR, $1);}//kod skoka ima drugacije znacenje
   | TOKEN_SYMBOL
-  { $$ = new Addressing("memdir", -1, $1);}//kod skoka ima drugacije znacenje, prepoznati da li je instrukcija skoka
+  { $$ = new Addressing(MEMDIR, -1, $1);}//kod skoka ima drugacije znacenje, prepoznati da li je instrukcija skoka
   | TOKEN_GP_REGISTER
-  { $$ = new Addressing("regdir", -1, nullptr, $1);}
+  { $$ = new Addressing(REGDIR, -1, nullptr, $1);}
   | TOKEN_CS_REGISTER
-  { $$ = new Addressing("regdir", -1, nullptr,-1, $1, true);}
+  { $$ = new Addressing(REGDIR, -1, nullptr,-1, $1, true);}
   | TOKEN_LSQB TOKEN_GP_REGISTER TOKEN_RSQB 
-  { $$ = new Addressing("regind", -1, nullptr, $2);}
+  { $$ = new Addressing(REGIND, -1, nullptr, $2);}
   | TOKEN_LSQB TOKEN_CS_REGISTER TOKEN_RSQB
-  { $$ = new Addressing("regind", -1, nullptr, -1, $2, true);}
+  { $$ = new Addressing(REGIND, -1, nullptr, -1, $2, true);}
   | TOKEN_LSQB TOKEN_GP_REGISTER TOKEN_PLUS TOKEN_LITERAL TOKEN_RSQB 
-  { $$ = new Addressing("regindpom", $4, nullptr , $2);}
+  { $$ = new Addressing(REGINDPOM, $4, nullptr , $2);}
   | TOKEN_LSQB TOKEN_CS_REGISTER TOKEN_PLUS TOKEN_LITERAL TOKEN_RSQB
-  { $$ = new Addressing("regindpom", $4, nullptr, -1, $2, true);}
+  { $$ = new Addressing(REGINDPOM, $4, nullptr, -1, $2, true);}
   | TOKEN_LSQB TOKEN_GP_REGISTER TOKEN_PLUS TOKEN_SYMBOL TOKEN_RSQB
-  { $$ = new Addressing("regindpom", -1, $4, $2);}
+  { $$ = new Addressing(REGINDPOM, -1, $4, $2);}
   | TOKEN_LSQB TOKEN_CS_REGISTER TOKEN_PLUS TOKEN_SYMBOL TOKEN_RSQB
-  { $$ = new Addressing("regindpom", -1, $4, -1, $2, true);}
+  { $$ = new Addressing(REGINDPOM, -1, $4, -1, $2, true);}
   ;
 label:
   TOKEN_LABEL

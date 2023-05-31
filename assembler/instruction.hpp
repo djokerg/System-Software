@@ -13,11 +13,11 @@ class Instruction: public Lang_Elem{
   Addressing* addressing;
   int gpr1;
   int gpr2;
-  char* csr;
+  int csr;
   yytokentype token_type;
 
   public:
-  Instruction(yytokentype token_type, int line_n, char* mnemonic, Addressing* addr = nullptr, int gpr1 = -1, int gpr2 = -1, char* csr = nullptr):Lang_Elem(line_n){
+  Instruction(yytokentype token_type, int line_n, char* mnemonic, Addressing* addr = nullptr, int gpr1 = -1, int gpr2 = -1, int csr = -1):Lang_Elem(line_n){
     this->mnemonic = mnemonic;
     this->addressing = addr;
     this->gpr1 = gpr1;
@@ -36,7 +36,9 @@ class Instruction: public Lang_Elem{
       if(gpr2 != -1){
         cout << gpr2 << " ";
       }
-      cout << (csr!= nullptr? csr: "");
+      if(csr != -1){
+        cout << csr << " ";
+      }
     }
   }
 
