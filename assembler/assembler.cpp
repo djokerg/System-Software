@@ -465,22 +465,27 @@ void Assembler::make_bjmp_or_call(yytokentype instr_token, Addressing *addr, int
     case TOKEN_JMP:{
       opcode1 = JMP_MEM;
       opcode2 = JMP;
+      break;
     }
     case TOKEN_CALL:{
       opcode1 = CALL_MEM;
       opcode2 = CALL;
+      break;
     }
     case TOKEN_BEQ:{
       opcode1 = BEQ_MEM;
       opcode2 = BEQ;
+      break;
     }
     case TOKEN_BNE:{
       opcode1 = BNE_MEM;
       opcode2 = BNE;
+      break;
     }
     case TOKEN_BGT:{
       opcode1 = BGT_MEM;
       opcode2 = BGT;
+      break;
     }
   }
   int instr = 0;
