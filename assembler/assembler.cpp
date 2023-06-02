@@ -79,17 +79,17 @@ void Assembler::write_literal_pool()
     for(map<int, Literal_table_entry>::iterator iter2 = iter->second.literal_table.begin(); iter2 != iter->second.literal_table.end(); iter2++){
       //iterating trough all literals in literal pool
       int value = iter2->first;
-      data[iter->second.name].write((char const*)(&value), sizeof(int));
+      data[iter->second.name].write((char*)(&value), sizeof(int));
     }
     for(map<string, Literal_table_entry>::iterator iter2 = iter->second.symbol_l_table.begin(); iter2 != iter->second.symbol_l_table.end(); iter2++){
       //iterating trough all symbols in symbol pool
       //do something different
       int value = 0;
-      data[iter->second.name].write((char const*)(&value), sizeof(int));//za svaki simbol jednostavno nulu ipisati.
+      data[iter->second.name].write((char*)(&value), sizeof(int));//za svaki simbol jednostavno nulu ipisati.
     }
   }
 }
-
+//creating relocation on current location counter
 void Assembler::create_relocation_entry(string symbol_name)
 {
   map<string, Symbol_table_entry>::iterator iter = symbol_table.find(symbol_name);
@@ -130,6 +130,12 @@ void Assembler::create_relocation_entry(string symbol_name)
 
 void Assembler::create_relocation_entry(string symbol_name, int offset)
 {
+  //check if its already in relocation_table
+  for(int i =0; i < relocation_table[current_section].size(); i++){
+    if(relocation_table[current_section].at(i).symbol == symbol_name && relocation_table[current_section].at(i).offset == offset){
+      return;
+    }
+  }
   map<string, Symbol_table_entry>::iterator iter = symbol_table.find(symbol_name);
     if(iter != symbol_table.end()){
       //entry mi predstavlja simbol na osnovu koga patchujem relokaciju
@@ -305,9 +311,9 @@ bool Assembler::make_ld_st(yytokentype instr_token, Addressing *addr, int gpr1)
       }
     }
   }
-  data[current_section].write((char const*)(&instr), sizeof(int));
+  data[current_section].write((char*)(&instr), sizeof(int));
   if(instr2){
-    data[current_section].write((char const*)(&instr2), sizeof(int));
+    data[current_section].write((char*)(&instr2), sizeof(int));
   }
   return true;
 }
@@ -319,72 +325,91 @@ void Assembler::create_binary_file()
   //write symbol table
 
   int num_of_entries = symbol_table.size();
-  binary_file.write((char const*)(&num_of_entries), sizeof(int));
+  binary_file.write((char*)(&num_of_entries), sizeof(int));
   for(map<string, Symbol_table_entry>::iterator iter = symbol_table.begin(); iter != symbol_table.end(); iter++){
     //output key first
     string key = iter->first;
     int length = key.length();
-    binary_file.write((char const*)(&length), sizeof(int));
+    binary_file.write((char*)(&length), sizeof(int));
     binary_file.write(key.c_str(), key.length());
 
     //output value
-    binary_file.write((char const*)(&iter->second.defined), sizeof(iter->second.defined));
-    binary_file.write((char const*)(&iter->second.global), sizeof(iter->second.global));
-    binary_file.write((char const*)(&iter->second.id_temp), sizeof(iter->second.id_temp));
-    binary_file.write((char const*)(&iter->second.is_extern), sizeof(iter->second.is_extern));
-    binary_file.write((char const*)(&iter->second.value), sizeof(iter->second.value));
+    binary_file.write((char*)(&iter->second.defined), sizeof(iter->second.defined));
+    binary_file.write((char*)(&iter->second.global), sizeof(iter->second.global));
+    binary_file.write((char*)(&iter->second.id_temp), sizeof(iter->second.id_temp));
+    binary_file.write((char*)(&iter->second.is_extern), sizeof(iter->second.is_extern));
+    binary_file.write((char*)(&iter->second.value), sizeof(iter->second.value));
     
     length = iter->second.name.length();
-    binary_file.write((char const*)(&length), sizeof(int));
+    binary_file.write((char*)(&length), sizeof(int));
     binary_file.write(iter->second.name.c_str(), iter->second.name.length());
     
-    length = iter->second.section.length();
-    binary_file.write((char const*)(&length), sizeof(int));
-    binary_file.write(iter->second.section.c_str(), iter->second.section.length());
+    binary_file.write((char*)(&section_table[iter->second.section].section_id), sizeof(int));
   
   }
 
   num_of_entries = section_table.size();
-  binary_file.write((char const*)(&num_of_entries), sizeof(int));
+  binary_file.write((char*)(&num_of_entries), sizeof(int));
   for(map<string, Section_table_entry>::iterator iter = section_table.begin(); iter != section_table.end(); iter++){
     //output key first
     string key = iter->first;
     int length = key.length();
-    binary_file.write((char const*)(&length), sizeof(int));
+    binary_file.write((char*)(&length), sizeof(int));
     binary_file.write(key.c_str(), key.length());
 
     //output value
-    binary_file.write((char const*)(&iter->second.section_id), sizeof(iter->second.section_id));
-    binary_file.write((char const*)(&iter->second.size), sizeof(iter->second.size));
+    binary_file.write((char*)(&iter->second.section_id), sizeof(iter->second.section_id));
+    binary_file.write((char*)(&iter->second.size), sizeof(iter->second.size));
     
     length = iter->second.name.length();
-    binary_file.write((char const*)(&length), sizeof(int));
+    binary_file.write((char*)(&length), sizeof(int));
     binary_file.write(iter->second.name.c_str(), iter->second.name.length());
 
     //literal table is not neccesary for linking
   }
 
   num_of_entries = relocation_table.size();
-  binary_file.write((char const*)(&num_of_entries), sizeof(int));
+  binary_file.write((char*)(&num_of_entries), sizeof(int));
   for(map<string, vector<Reloc_table_entry>>::iterator iter = relocation_table.begin(); iter!=relocation_table.end(); iter++){
     //output key
     string key = iter->first;
     int length = key.length();
-    binary_file.write((char const*)(&length), sizeof(int));
+    binary_file.write((char*)(&length), sizeof(int));
     binary_file.write(key.c_str(), key.length());
 
     //output value
     int num_of_rows = iter->second.size();
-    binary_file.write((char const*)(&num_of_rows), sizeof(int));
+    binary_file.write((char*)(&num_of_rows), sizeof(int));
     for(Reloc_table_entry reloc:iter->second){
-      binary_file.write((char const*)(&reloc.addend), sizeof(reloc.addend));
-      binary_file.write((char const*)(&reloc.offset), sizeof(reloc.offset));
+      binary_file.write((char*)(&reloc.addend), sizeof(reloc.addend));
+      binary_file.write((char*)(&reloc.offset), sizeof(reloc.offset));
 
-      int length = reloc.symbol.length();
-      binary_file.write((char const*)(&length), sizeof(int));
+      int length = reloc.symbol.length(); // edit this
+      binary_file.write((char*)(&length), sizeof(int));
       binary_file.write(reloc.symbol.c_str(), reloc.symbol.length());
     }
   }
+  
+  //output of all sections data
+  num_of_entries = data.size();
+  binary_file.write((char*)(&num_of_entries), sizeof(int));
+  for(map<string, stringstream>::iterator iter = data.begin(); iter != data.end(); iter++){
+    //output key first
+    //patch this, you dont have to output length like this
+    string key = iter->first;
+    int length = key.length();
+    binary_file.write((char*)(&length), sizeof(int));
+    binary_file.write(key.c_str(), key.length());
+
+    //output value
+  
+    iter->second.seekg(0);
+    string data_output = iter->second.str();
+    length = data_output.length();
+    binary_file.write((char*)(&length), sizeof(length));
+    binary_file.write(data_output.data(), data_output.length());
+  }
+  binary_file.close();
 }
 
 bool Assembler::process_label_first_pass(string label_name, int line_num)
@@ -522,7 +547,7 @@ void Assembler::make_bjmp_or_call(yytokentype instr_token, Addressing *addr, int
       create_relocation_entry(addr->symbol, reloc_location);
     }
   }
-  data[current_section].write((char const*)(&instr), sizeof(int));
+  data[current_section].write((char*)(&instr), sizeof(int));
 }
 
 bool Assembler::process_instruction_second_pass(yytokentype instr_token, string mnemonic, int line_n, Addressing *addr, int gpr1, int gpr2, int csr)
@@ -531,27 +556,27 @@ bool Assembler::process_instruction_second_pass(yytokentype instr_token, string 
     case TOKEN_HALT:{
       //exporting instrukction to section_data
       int instr = make_machine_instruction(HALT);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_INT:{
       int instr = make_machine_instruction(INT);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_IRET:{
       //possibly wrong
       int instr = make_machine_instruction((OP_CODE_MOD)0b10010110, 0 , 14, 0, 4);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       instr = make_machine_instruction(POP, 15 , 14, 0, 8);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       location_counter+=4;
       break;
     }
     case TOKEN_RET:{
       //just pop pc
       int instr = make_machine_instruction(POP, 15 , 14, 0, 4);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_CALL:{
@@ -576,68 +601,68 @@ bool Assembler::process_instruction_second_pass(yytokentype instr_token, string 
     }
     case TOKEN_PUSH:{
       int instr = make_machine_instruction(PUSH, 14, 0,gpr1, -4);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_POP:{
       //gprB je sp, gprA je gpr
       int instr = make_machine_instruction(POP, gpr1, 14,0, 4);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_XCHG:{ 
       int instr = make_machine_instruction(XCHG, 0, gpr1, gpr2, 0);
-      data[current_section].write((char const*)(&instr),sizeof(int));
+      data[current_section].write((char*)(&instr),sizeof(int));
       break;
     }
     case TOKEN_ADD:{
       int instr = make_machine_instruction(ADD, gpr2, gpr2, gpr1, 0);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_SUB:{
       int instr = make_machine_instruction(SUB, gpr2, gpr2, gpr1, 0);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_MUL:{
       int instr = make_machine_instruction(MUL, gpr2, gpr2, gpr1, 0);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_DIV:{
       int instr = make_machine_instruction(DIV, gpr2, gpr2, gpr1, 0);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_NOT:{
       int instr = make_machine_instruction(NOT, gpr1, gpr1, 0, 0);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_AND:{
       int instr = make_machine_instruction(AND, gpr2, gpr2, gpr1, 0);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_OR:{
       int instr = make_machine_instruction(OR, gpr2, gpr2, gpr1, 0);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_XOR:{
       int instr = make_machine_instruction(XOR, gpr2, gpr2, gpr1, 0);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_SHL:{
       int instr = make_machine_instruction(SHL, gpr2, gpr2, gpr1, 0);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_SHR:{
       int instr = make_machine_instruction(SHR, gpr2, gpr2, gpr1, 0);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_LD:{
@@ -656,12 +681,12 @@ bool Assembler::process_instruction_second_pass(yytokentype instr_token, string 
     }
     case TOKEN_CSRRD:{
       int instr = make_machine_instruction(CSRRD, gpr1, csr, 0, 0);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
     case TOKEN_CSRWR:{
       int instr = make_machine_instruction(CSRWR, csr, gpr1, 0, 0);
-      data[current_section].write((char const*)(&instr), sizeof(int));
+      data[current_section].write((char*)(&instr), sizeof(int));
       break;
     }
   }
@@ -672,45 +697,12 @@ bool Assembler::process_instruction_second_pass(yytokentype instr_token, string 
 
 void Assembler::print_symbol_table()
 {
-  //cuvam interno tabelu sekcija, ali u izlaznom fajlu ce biti objedinjeni
-  // debugging_file << "#.symtab" << endl;
-  // debugging_file << "Num\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
-  // for(map<string, Section_table_entry>::iterator it = section_table.begin(); it != section_table.end(); it++){
-
-  //   debugging_file << it->second.section_id << ":\t"; 
-  //   debugging_file << hex << setfill('0') << setw(4) << (0xffff & 0) << "\t";
-  //   debugging_file << hex << setfill('0') << setw(4) << (0xffff & it->second.size) << "\t";
-  //   debugging_file << "SCTN\t";
-  //   debugging_file << "LOC\t\t\t";
-  //   debugging_file << it->second.section_id << "\t\t";
-  //   debugging_file << it->second.name << endl;
-  // }
-  // for(map<string, Symbol_table_entry>::iterator it = symbol_table.begin(); it != symbol_table.end(); it++){
-
-  //   debugging_file << (it->second.id_temp+current_id_section_table) << ":\t"; 
-  //   debugging_file << hex << setfill('0') << setw(4) << (0xffff & it->second.value) << "\t";
-  //   debugging_file << hex << setfill('0') << setw(4) << (0xffff & 0) << "\t";
-  //   debugging_file << "NOTYPE\t";
-  //   if(it->second.global == false){
-  //     debugging_file << "LOC\t\t";
-  //   }else{
-  //     if(it->second.defined == true){
-  //       debugging_file << "GLOB\t";
-  //     }else{
-  //       if(it->second.is_extern){
-  //         debugging_file << "GLOB\t";
-  //       }
-  //     }
-  //   }
-  //   debugging_file << section_table[it->second.section].section_id << "\t\t";
-  //   debugging_file << it->second.name << endl;
-  // }
 
   debugging_file << "#.symtab" << endl;
-  debugging_file << "Num\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
+  debugging_file << "Id\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
   for(map<string, Symbol_table_entry>::iterator it = symbol_table.begin(); it != symbol_table.end(); it++){
 
-    debugging_file << it->second.id_temp << ":\t"; 
+    debugging_file << it->second.id_temp << "\t"; 
     debugging_file << hex << setfill('0') << setw(4) << (0xffff & it->second.value) << "\t";
     debugging_file << hex << setfill('0') << setw(4) << (0xffff & 0) << "\t";
     debugging_file << "NOTYPE\t";
@@ -736,10 +728,10 @@ void Assembler::print_symbol_table()
 void Assembler::print_section_table()
 {
   debugging_file << "#.sections" << endl;
-  debugging_file << "Num\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
+  debugging_file << "Id\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
   for(map<string, Section_table_entry>::iterator it = section_table.begin(); it != section_table.end(); it++){
 
-    debugging_file << it->second.section_id << ":\t"; 
+    debugging_file << it->second.section_id << "\t"; 
     debugging_file << hex << setfill('0') << setw(4) << (0xffff & 0) << "\t";
     debugging_file << hex << setfill('0') << setw(4) << (0xffff & it->second.size) << "\t";
     debugging_file << "SCTN\t";
@@ -1054,7 +1046,7 @@ bool Assembler::process_skip_second_pass(int value)
 {
   for(int i =0; i < value; i++){
     char c = 0;
-    data[current_section].write((char const*)(&c), sizeof(char));
+    data[current_section].write((char*)(&c), sizeof(char));
   }
   location_counter += value;
   return true;
@@ -1064,7 +1056,7 @@ bool Assembler::process_word_second_pass(pair<bool, Uni> argument, int line_num)
 {
   if(argument.first){
     int value = argument.second.num;
-    data[current_section].write((char const*)(&value), sizeof(int));
+    data[current_section].write((char*)(&value), sizeof(int));
 
     debugging_file << "Word second pass " << argument.second.num << endl;
   }
@@ -1073,7 +1065,7 @@ bool Assembler::process_word_second_pass(pair<bool, Uni> argument, int line_num)
     string symbol = argument.second.sym;
     create_relocation_entry(symbol);
     int c = 0;
-    data[current_section].write((char const*)(&c), sizeof(int));
+    data[current_section].write((char*)(&c), sizeof(int));
     // }else{
     //   //symbol not found in symbol table
     //   errors_to_print[line_num] = "Directive word used undeclared symbol as argument";
@@ -1089,10 +1081,10 @@ bool Assembler::process_ascii_second_pass(string argument, int line_num)
   debugging_file << "Ascii second pass " << argument << endl;
   //just adding in current section data and adding to location_counter
   for(char c : argument){
-    data[current_section].write((char const*)(&c), sizeof(char));
+    data[current_section].write((char*)(&c), sizeof(char));
   }
   char c = '\0';
-  data[current_section].write((char const*)(&c), sizeof(char));
+  data[current_section].write((char*)(&c), sizeof(char));
   location_counter+=argument.size()+1;
   return true;
 }

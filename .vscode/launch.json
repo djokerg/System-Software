@@ -8,6 +8,32 @@
       "name": "(gdb) Launch",
       "type": "cppdbg",
       "request": "launch",
+      "program": "${workspaceFolder}/linker/linker",
+      "args": ["-o", "output", "i.o", "i2.o", "-hex", "-place=my_code_handler@0x10"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/linker",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+          {
+              "description": "Enable pretty-printing for gdb",
+              "text": "-enable-pretty-printing",
+              "ignoreFailures": true
+          },
+          {
+              "description": "Set Disassembly Flavor to Intel",
+              "text": "-gdb-set disassembly-flavor intel",
+              "ignoreFailures": true
+          }
+      ],
+      "preLaunchTask": "C/C++: g++ build project (make) linker",
+      "miDebuggerPath": "/usr/bin/gdb"
+    },
+    {
+      "name": "(gdb) Launch",
+      "type": "cppdbg",
+      "request": "launch",
       "program": "${workspaceFolder}/assembler/asembler",
       "args": ["-o", "izlaz.o", "input.s"],
       "stopAtEntry": false,
