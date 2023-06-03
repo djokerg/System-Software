@@ -35,10 +35,12 @@ int main(int argc, const char* argv[]){
   }
   if(is_hex && is_relocatable){
     cout << "-hex and -relocatable options entered both";
+    return -1;
   }
 
   if(!is_hex && !is_relocatable){
     cout << "one of the -hex or -relocatable options must be selected";
+    return -1;
   }
 
   Linker* ln = Linker::getInstance();

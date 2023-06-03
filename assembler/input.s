@@ -1,4 +1,4 @@
-.extern my_counter, term_in, term_out, ascii_code
+.extern my_counter
 .global handler
 .section my_code_handler
 handler:
@@ -11,13 +11,9 @@ ld $3, %r2
 beq %r1, %r2, my_isr_terminal
 # obrada prekida od tajmera
 my_isr_timer:
-ld $ascii_code , %r1
-st %r1, term_out
 jmp finish
 # obrada prekida od terminala
 my_isr_terminal:
-ld term_in, %r1
-st %r1, term_out
 ld my_counter, %r1
 ld $1, %r2
 add %r2, %r1
@@ -26,4 +22,7 @@ finish:
 pop %r2
 pop %r1
 iret
+.section my_code_main
+wait: .word 0
+.ascii "Marmun"
 .end

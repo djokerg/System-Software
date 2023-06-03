@@ -48,17 +48,11 @@ class Linker{
     int addend;
   };
 
-  struct Linker_section_info{
-    string filename;
-    int section_id;
-    int offset_in_merged;
-  };
-
   struct Aggregate_section{
     int aggregate_id;
     int aggregate_size;
     int aggregate_address;
-    vector<Linker_section_info> included_sections;
+    map<string, int> included_sections;//pair file, offset in merged sections
   };
 
   int current_aggregate_id;
@@ -73,6 +67,7 @@ class Linker{
   map<string, Symbol_table_entry> output_sym_table;
   map<int, Section_table_entry> output_sec_table;
   map<string, vector<Reloc_table_entry>> output_reloc_table;
+  map<string, stringstream*> output_data;
 
   bool create_tables_from_input();
   bool merge_same_name_sections();
@@ -81,6 +76,13 @@ class Linker{
   bool is_intersection(int left1, int right1, int left2, int right2);
   static bool compareById(const pair<string,Aggregate_section> &a, const pair<string,Aggregate_section> &b);
   void print_aggregate_sections();
+  void make_output_section_table();
+  bool merge_symbol_tables();
+  void print_output_symbol_table();
+  bool merge_relocation_tables();
+  void print_output_relocation_table();
+  bool merge_section_data();
+  void print_output_section_data();
 public:
   Linker(const Linker& obj) = delete;
   
