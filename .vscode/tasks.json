@@ -34,6 +34,23 @@
 				"isDefault": true
 			},
 			"detail": "compiler: /usr/bin/g++"
+		},
+		{
+			"type": "cppbuild",
+			"label": "C/C++: g++ build project (make) emulator",
+			"command": "make",
+			"args": [],
+			"options": {
+				"cwd": "${workspaceFolder}/emulator"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "compiler: /usr/bin/g++"
 		}
 	]
 }
