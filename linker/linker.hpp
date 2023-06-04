@@ -83,6 +83,8 @@ class Linker{
   void print_output_relocation_table();
   bool merge_section_data();
   void print_output_section_data();
+  bool resolve_relocations_hex();
+  void create_binary_file();
 public:
   Linker(const Linker& obj) = delete;
   

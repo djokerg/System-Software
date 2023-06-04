@@ -249,6 +249,14 @@ void Linker::make_output_section_table()
 {
   //first input all sections
   //this can depend of is it relocatable or not
+  for(map<string, Aggregate_section>::iterator iter = merged_sections.begin();iter!=merged_sections.end();iter++){
+    Section_table_entry new_entry;
+    new_entry.name = iter->first;
+    new_entry.section_id = iter->second.aggregate_id;
+    new_entry.size = iter->second.aggregate_size;
+    new_entry.virtual_address = iter->second.aggregate_address;
+    output_sec_table[new_entry.section_id] = new_entry;
+  }
 }
 
 bool Linker::merge_symbol_tables()
@@ -275,7 +283,7 @@ bool Linker::merge_symbol_tables()
     for(map<string, Symbol_table_entry>::iterator iter = temp_table.begin(); iter!= temp_table.end();iter++){
       //look for it in aggregate sections to check if symbol is section
       map<string, Aggregate_section>::iterator iter_sec = merged_sections.find(iter->first);
-      if(iter_sec == merged_sections.end()){
+      if(iter_sec == merged_sections.end() && iter->second.global){
         //not a section
         // check if its extern
         if(iter->second.is_extern){
@@ -283,7 +291,7 @@ bool Linker::merge_symbol_tables()
         }else{
           //check if symbol is already added to symbol_table
           map<string, Symbol_table_entry>::iterator iter_sym = output_sym_table.find(iter->first);
-          if(iter_sym != output_sym_table.end() && iter->second.global){
+          if(iter_sym != output_sym_table.end()){
             //double definition of symbol
             errors_to_print.push_back("Double definition of symbol " + iter->first);
             return false;
@@ -361,7 +369,13 @@ bool Linker::merge_relocation_tables()
       //iterating trough all relocation tables for all sections
       for(Reloc_table_entry reloc : iter->second){
         Reloc_table_entry new_output;
-        new_output.addend = reloc.addend;
+        //add offset off in aggregate section, to have fully merged symbol table, if symbol is in fact section
+        map<string, Aggregate_section>::iterator is_section = merged_sections.find(reloc.symbol);
+        int additional_addend = 0;
+        if(is_section != merged_sections.end()){
+          additional_addend = merged_sections[reloc.symbol].included_sections[file];
+        }
+        new_output.addend = reloc.addend + additional_addend;//update addend if its local symbol
         new_output.offset = reloc.offset + merged_sections[iter->first].included_sections[file];
         new_output.symbol = reloc.symbol;
         output_reloc_table[iter->first].push_back(new_output);
@@ -436,6 +450,156 @@ void Linker::print_output_section_data()
     } 
 }
 
+bool Linker::resolve_relocations_hex()
+{
+  //resolve first for all symbols, all symbols should have virtual addresses
+  for(map<string, Symbol_table_entry>::iterator  iter = output_sym_table.begin(); iter!=output_sym_table.end();iter++){
+    //check if symbol is section
+    map<string, Aggregate_section>::iterator is_section = merged_sections.find(iter->first);
+    if(is_section == merged_sections.end()){
+      //not section, we can update value of symbol according to virtual address of section where they are
+      iter->second.value += output_sec_table[iter->second.section].virtual_address;
+    }
+  }
+  //now i can resolve all relocation_tables
+  for(map<string, vector<Reloc_table_entry>>::iterator iter = output_reloc_table.begin();iter!=output_reloc_table.end();iter++){
+    //now i have to find symbol which pass this allocation in some section
+    for(Reloc_table_entry reloc : iter->second){
+      int symbol_value = 0;
+      map<string, Aggregate_section>::iterator is_section = merged_sections.find(reloc.symbol);
+        if(is_section != merged_sections.end()){
+          //it is section, so put its virual adress
+          symbol_value = is_section->second.aggregate_address + reloc.addend;//this value is if its section in case
+        }
+        else{
+          //find symbol in symbol table which have this specified name
+          symbol_value = output_sym_table[reloc.symbol].value;
+        }
+        //now i have to go to this specified section data and write in position offset this symbol value
+        stringstream* my_data = output_data[iter->first];
+        //on postition 
+        string current_data = my_data->str();
+        string non_changable = current_data.substr(0, reloc.offset);
+        string the_rest = current_data.substr(reloc.offset+4, current_data.size()-reloc.offset-4);
+        my_data->seekp(0);
+        my_data->write(non_changable.c_str(), non_changable.size());
+        my_data->write((char*)(&symbol_value), sizeof(symbol_value));
+        my_data->write(the_rest.c_str(), the_rest.size());
+    }
+  }
+  return true;
+}
+
+void Linker::create_binary_file()
+{
+  ofstream binary_file(output_file, ios::out | ios::binary);
+  if(is_relocatable){
+    //write symbol table
+    int num_of_entries = output_sym_table.size();
+    binary_file.write((char*)(&num_of_entries), sizeof(int));
+    for(map<string, Symbol_table_entry>::iterator iter = output_sym_table.begin(); iter != output_sym_table.end(); iter++){
+      //output key first
+      string key = iter->first;
+      int length = key.length();
+      binary_file.write((char*)(&length), sizeof(int));
+      binary_file.write(key.c_str(), key.length());
+
+      //output value
+      binary_file.write((char*)(&iter->second.defined), sizeof(iter->second.defined));
+      binary_file.write((char*)(&iter->second.global), sizeof(iter->second.global));
+      binary_file.write((char*)(&iter->second.id_temp), sizeof(iter->second.id_temp));
+      binary_file.write((char*)(&iter->second.is_extern), sizeof(iter->second.is_extern));
+      binary_file.write((char*)(&iter->second.value), sizeof(iter->second.value));
+      
+      length = iter->second.name.length();
+      binary_file.write((char*)(&length), sizeof(int));
+      binary_file.write(iter->second.name.c_str(), iter->second.name.length());
+      
+      binary_file.write((char*)(&output_sec_table[iter->second.section].section_id), sizeof(int));
+    
+    }
+
+    num_of_entries = output_sec_table.size();
+    binary_file.write((char*)(&num_of_entries), sizeof(int));
+    for(map<int, Section_table_entry>::iterator iter = output_sec_table.begin(); iter != output_sec_table.end(); iter++){
+      //output key first
+      string key = iter->second.name;
+      int length = key.length();
+      binary_file.write((char*)(&length), sizeof(int));
+      binary_file.write(key.c_str(), key.length());
+
+      //output value
+      binary_file.write((char*)(&iter->second.section_id), sizeof(iter->second.section_id));
+      binary_file.write((char*)(&iter->second.size), sizeof(iter->second.size));
+      
+      length = iter->second.name.length();
+      binary_file.write((char*)(&length), sizeof(int));
+      binary_file.write(iter->second.name.c_str(), iter->second.name.length());
+
+      //literal table is not neccesary for linking
+    }
+
+    num_of_entries = output_reloc_table.size();
+    binary_file.write((char*)(&num_of_entries), sizeof(int));
+    for(map<string, vector<Reloc_table_entry>>::iterator iter = output_reloc_table.begin(); iter!=output_reloc_table.end(); iter++){
+      //output key
+      string key = iter->first;
+      int length = key.length();
+      binary_file.write((char*)(&length), sizeof(int));
+      binary_file.write(key.c_str(), key.length());
+
+      //output value
+      int num_of_rows = iter->second.size();
+      binary_file.write((char*)(&num_of_rows), sizeof(int));
+      for(Reloc_table_entry reloc:iter->second){
+        binary_file.write((char*)(&reloc.addend), sizeof(reloc.addend));
+        binary_file.write((char*)(&reloc.offset), sizeof(reloc.offset));
+
+        int length = reloc.symbol.length(); // edit this
+        binary_file.write((char*)(&length), sizeof(int));
+        binary_file.write(reloc.symbol.c_str(), reloc.symbol.length());
+      }
+    }
+    //output of all sections data
+    num_of_entries = output_data.size();
+    binary_file.write((char*)(&num_of_entries), sizeof(int));
+    for(map<string, stringstream*>::iterator iter = output_data.begin(); iter != output_data.end(); iter++){
+      //output key first
+      //patch this, you dont have to output length like this
+      string key = iter->first;
+      int length = key.length();
+      binary_file.write((char*)(&length), sizeof(int));
+      binary_file.write(key.c_str(), key.length());
+
+      //output value
+    
+      iter->second->seekg(0);
+      string data_output = iter->second->str();
+      length = data_output.length();
+      binary_file.write((char*)(&length), sizeof(length));
+      binary_file.write(data_output.data(), data_output.length());
+    }
+  }else{
+    //this is hex file, it contains only section table
+    //dont count undefined section
+    int num_of_sections = output_sec_table.size()-1;
+    binary_file.write((char*)(&num_of_sections), sizeof(num_of_sections));
+    for(map<int,Section_table_entry>::iterator iter = output_sec_table.begin(); iter!=output_sec_table.end();iter++){
+      if(iter->second.name == "UND"){
+        //this section has no size and need no memory
+        continue;
+      }
+      int virtual_address_of_section = iter->second.virtual_address;
+      binary_file.write((char*)(&virtual_address_of_section), sizeof(virtual_address_of_section));
+      int section_size = iter->second.size;
+      binary_file.write((char*)(&section_size), sizeof(section_size));
+      string s_data = output_data[iter->second.name]->str();
+      binary_file.write(s_data.c_str(), s_data.size());
+    }
+  }
+  binary_file.close(); 
+}
+
 bool Linker::proceed_linking()
 {
   //first create tables from input files
@@ -443,10 +607,10 @@ bool Linker::proceed_linking()
     return false;
   }
   //print those tables 
-  print_symbol_table();
-  print_section_table();
-  print_reloc_table();
-  print_section_data();
+  // print_symbol_table();
+  // print_section_table();
+  // print_reloc_table();
+  // print_section_data();
   //mapping all sections
   if(!merge_same_name_sections()){
     return false;
@@ -456,20 +620,27 @@ bool Linker::proceed_linking()
       return false;//dodati povratne vrednosti
     }
   }
-  print_aggregate_sections();
   if(!merge_symbol_tables()){
     return false;
   }
-  print_output_symbol_table();
   if(!merge_relocation_tables()){
     return false;
   }
-  print_output_relocation_table();
    if(!merge_section_data()){
     return false;
   }
+  make_output_section_table();
+  if(!is_relocatable){
+    if(!resolve_relocations_hex()){
+      return false;
+    }
+  }
+  print_output_symbol_table();
+  print_aggregate_sections();
+  print_output_relocation_table();
   print_output_section_data();
   //i am doing all operations as file will be relocatable
+  create_binary_file();
   return true;
 }
 

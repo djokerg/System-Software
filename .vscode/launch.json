@@ -9,7 +9,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/linker/linker",
-      "args": ["-o", "output", "i.o", "i2.o", "-relocatable"],
+      "args": ["-o", "output", "i.o", "i2.o", "-hex"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/linker",
       "environment": [],

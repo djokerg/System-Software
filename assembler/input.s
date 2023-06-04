@@ -23,6 +23,7 @@ pop %r2
 pop %r1
 iret
 .section my_code_main
-wait: .word 0
+.ascii "aaa"
+.word finish
 .ascii "Marmun"
 .end
