@@ -1,0 +1,43 @@
+Processed external symbol value1
+New section isr
+Processed global symbol isr_software
+Processed label isr_software
+Processed instruction push first pass
+Processed instruction push first pass
+Processed instruction ld first pass
+Processed instruction ld first pass
+Processed instruction st first pass
+Processed instruction pop first pass
+Processed instruction pop first pass
+Processed instruction ret first pass
+End of an assembler pass
+Instruction push stored in section data(memory)
+Instruction push stored in section data(memory)
+Instruction ld stored in section data(memory)
+Instruction ld stored in section data(memory)
+Instruction st stored in section data(memory)
+Instruction pop stored in section data(memory)
+Instruction pop stored in section data(memory)
+Instruction ret stored in section data(memory)
+#.symtab
+Id	Value	Size	TYPE	Bind	Ndx	Name
+0	0000	0000	NOTYPE	LOC		0		UND
+2	0000	0000	NOTYPE	LOC		1		isr
+3	0000	0000	NOTYPE	GLOB	1		isr_software
+1	0000	0000	NOTYPE	LOC		0		value1
+#.sections
+Id	Value	Size	TYPE	Bind	Ndx	Name
+0	0000	0000	SCTN	LOC			0		UND
+1	0000	0028	SCTN	LOC			1		isr
+#.reloc.isr
+Offset	Type	Symbol				Addend
+0024	R_TYPE	value1	0000	
+Section UND:
+NO DATA
+Section isr:
+num_of_bytes 40
+0000: fc 1f e0 81 fc 2f e0 81 
+0008: 14 00 1f 92 14 00 2f 92 
+0010: 00 10 20 80 04 00 2e 93 
+0018: 04 00 1e 93 04 00 fe 93 
+0020: cd ab 00 00 00 00 00 00 

@@ -4,44 +4,10 @@
 		{
 			"type": "cppbuild",
 			"label": "C/C++: g++ build project (make)",
-			"command": "make",
+			"command": "./start.sh",
 			"args": [],
 			"options": {
-				"cwd": "${workspaceFolder}/assembler"
-			},
-			"problemMatcher": [
-				"$gcc"
-			],
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
-			"detail": "compiler: /usr/bin/g++"
-		},
-		{
-			"type": "cppbuild",
-			"label": "C/C++: g++ build project (make) linker",
-			"command": "make",
-			"args": [],
-			"options": {
-				"cwd": "${workspaceFolder}/linker"
-			},
-			"problemMatcher": [
-				"$gcc"
-			],
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
-			"detail": "compiler: /usr/bin/g++"
-		},
-		{
-			"type": "cppbuild",
-			"label": "C/C++: g++ build project (make) emulator",
-			"command": "make",
-			"args": [],
-			"options": {
-				"cwd": "${workspaceFolder}/emulator"
+				"cwd": "${workspaceFolder}"
 			},
 			"problemMatcher": [
 				"$gcc"
