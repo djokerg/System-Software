@@ -37,7 +37,6 @@ SECTION \.section
 WORD \.word
 SKIP \.skip
 ASCII \.ascii
-EQU \.equ
 END \.end
 STRING \"[^"]+\"
 LITERAL_DECIMAL -?[0-9]+
@@ -91,10 +90,6 @@ CS_REGISTER %(status|handler|cause)
 	//obraditi ovde yytext, ili unaprediti ovu copy_str funkciju
      yylval.symbol = copy_str(yytext);
 		return TOKEN_ASCII;
-}
-{EQU} {
-     yylval.symbol = copy_str(yytext);
-		return TOKEN_EQU;
 }
 {END} {
      yylval.symbol = copy_str(yytext);

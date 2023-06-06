@@ -82,10 +82,10 @@ class Emulator{
 
   void* mapped_memory;
 
-  unsigned int read_int_from_memory(unsigned long address);
-  char read_byte_from_memory(unsigned long address);
-  void write_int_to_memory(unsigned long address, int num);
-  void write_byte_to_memory(unsigned long address, char c);
+  unsigned int read_int_from_memory(unsigned int address);
+  char read_byte_from_memory(unsigned int address);
+  void write_int_to_memory(unsigned int address, int num);
+  void write_byte_to_memory(unsigned int address, char c);
   
   vector<long> gp_registers;
   vector<long> cs_registers;
@@ -98,6 +98,7 @@ class Emulator{
   long& rsp = gp_registers[sp];
 
   bool is_running;
+  bool terminal_interrupt;
 
   //current instruction data
   OP_CODE_MOD mnemonic;
@@ -130,6 +131,10 @@ class Emulator{
   int pop();
   bool instruction_fetch_and_execute();
   void print_all_registers();
+
+  void config_terminal();
+  void reset_terminal();
+  void read_from_stdin_to_term_in();
 public:
   Emulator(const Emulator& obj) = delete;
   

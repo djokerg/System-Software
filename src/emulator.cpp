@@ -1,4 +1,5 @@
 #include "../inc/emulator.hpp"
+#include <termios.h>
 
 Emulator * Emulator::instancePtr = nullptr;
 
@@ -17,26 +18,32 @@ unsigned int Emulator::TERM_IN = 0xFFFFFF04;
 unsigned int Emulator::TERM_OUT = 0xFFFFFF00;
 unsigned int Emulator::TIM_CFG = 0xFFFFFF10;
 
-unsigned int Emulator::read_int_from_memory(unsigned long address)
+unsigned int Emulator::read_int_from_memory(unsigned int address)
 {
   int* value = reinterpret_cast<int*>(static_cast<char*>(mapped_memory) + address);
   return *value;
 }
 
-char Emulator::read_byte_from_memory(unsigned long address)
+char Emulator::read_byte_from_memory(unsigned int address)
 {
   char* c = static_cast<char*>(static_cast<char*>(mapped_memory) + address);
   return *c;
 }
 //ovo address moze biti i int
-void Emulator::write_int_to_memory(unsigned long address, int num)
+void Emulator::write_int_to_memory(unsigned int address, int num)
 {
+  if(address == TERM_OUT){
+    cout << (char)num << flush;
+  }
   int* value = reinterpret_cast<int*>(static_cast<char*>(mapped_memory) + address);
   *value = num;
 }
 
-void Emulator::write_byte_to_memory(unsigned long address, char c)
+void Emulator::write_byte_to_memory(unsigned int address, char c)
 {
+  if(address == TERM_OUT){
+    cout << c;
+  }
   char* c_mem = static_cast<char*>(static_cast<char*>(mapped_memory) + address);
   *c_mem = c;
 }
@@ -56,7 +63,7 @@ void Emulator::reset_flag(int flag)
   cs_registers[status] &= ~flag;
 }
 
-Emulator::Emulator() : emulator_debugging_file("emulator_debugging_file.txt"),is_running(false),gp_registers(NUM_OF_REGISTERS, 0),cs_registers(3, 0){}
+Emulator::Emulator() : emulator_debugging_file("emulator_debugging_file.txt"),is_running(false),gp_registers(NUM_OF_REGISTERS, 0),cs_registers(3, 0), terminal_interrupt(false){}
 
 bool Emulator::create_segment_table()
 {
@@ -174,25 +181,35 @@ bool Emulator::start_program()
   reset_flag(I);
 
   this->is_running = true;
+  config_terminal();
 
   while(is_running){
 
     if(!instruction_fetch_and_execute()){
       //call interupt
       generate_interrupt(FAULT_INSTRUCTION_CAUSE);
+      reset_terminal();
+      return false;
+    }
+    //check for terminal interrupt
+    read_from_stdin_to_term_in();
+
+    if(terminal_interrupt){
+      generate_interrupt(TERMINAL_CAUSE);
+      terminal_interrupt = false;
     }
   }
-
+  reset_terminal();
   return true;
 }
 
-void Emulator::generate_interrupt(int cause)
+void Emulator::generate_interrupt(int cause_param)
 {
   //now i have to put cause in cause register, push status i push pc
   push(cs_registers[status]);
   push(rpc);
   //change rpc, so it points to handler
-  cs_registers[cause] = cause;
+  cs_registers[cause] = cause_param;
   rpc = cs_registers[handler];//now i will jump to interrupt
 
   set_flag(I);
@@ -400,7 +417,7 @@ bool Emulator::instruction_fetch_and_execute()
 
 void Emulator::print_all_registers()
 {
-  cout << "-----------------------------------------------------------------" << endl;
+  cout << endl << "-----------------------------------------------------------------" << endl;
   cout << "Emulated processor executed halt instruction" << endl;
   cout << "Emulated processor state:" << endl;
   for(int i = 0; i <= 15;i++){
@@ -411,6 +428,39 @@ void Emulator::print_all_registers()
   }
 }
 
+struct termios backup_settings, new_settings;
+
+void Emulator::config_terminal()
+{
+  tcgetattr(STDIN_FILENO, &backup_settings);
+
+  new_settings = backup_settings;
+
+  new_settings.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN);
+
+  //set waiting time at 0
+
+  new_settings.c_cc[VTIME] = 0;
+  new_settings.c_cc[VMIN] = 0;
+
+  //set new settings to terminal
+  tcsetattr(STDIN_FILENO, TCSAFLUSH, &new_settings);
+
+}
+void Emulator::reset_terminal()
+{
+  //reset backup settings to STDIN file terminal
+  tcsetattr(STDIN_FILENO, TCSAFLUSH, &backup_settings);
+}
+void Emulator::read_from_stdin_to_term_in()
+{
+  //if there are characters to
+  char ch;
+  if(read(STDIN_FILENO, &ch, 1) == 1){
+    write_int_to_memory(TERM_IN,(int)ch);
+    terminal_interrupt = true;
+  }
+}
 bool Emulator::execute_file()
 {
   if(!create_segment_table()){
@@ -422,7 +472,9 @@ bool Emulator::execute_file()
   }
   //mem_dump();
   //all needed data is loaded, now i can start reading from memory and executing
-  start_program();
+  if(!start_program()){
+    return false;
+  }
   //mem_dump();
   print_all_registers();
   return true;

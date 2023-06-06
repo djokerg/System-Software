@@ -31,7 +31,6 @@
 %token <symbol> TOKEN_WORD
 %token <symbol> TOKEN_SKIP
 %token <symbol> TOKEN_ASCII
-%token <symbol> TOKEN_EQU
 %token <symbol> TOKEN_END
 
 %token <symbol> TOKEN_HALT

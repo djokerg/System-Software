@@ -1,4 +1,4 @@
-.extern isr_timer, isr_terminal, isr_software
+.extern isr_timer, isr_terminal
 
 .global handler
 .section my_handler
@@ -10,8 +10,6 @@ handler:
     beq %r1, %r2, handle_timer
     ld $3, %r2
     beq %r1, %r2, handle_terminal
-    ld $4, %r2
-    beq %r1, %r2, handle_software
 finish:
     pop %r2
     pop %r1
@@ -23,10 +21,6 @@ handle_timer:
 # obrada prekida od terminala
 handle_terminal:
     call isr_terminal
-    jmp finish
-# obrada softverskog prekida
-handle_software:
-    call isr_software
     jmp finish
     
 .end

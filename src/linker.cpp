@@ -296,21 +296,19 @@ bool Linker::merge_symbol_tables()
         }else{
           //check if symbol is already added to symbol_table
           map<string, Symbol_table_entry>::iterator iter_sym = output_sym_table.find(iter->first);
-          if(iter_sym != output_sym_table.end()){
+          if(iter_sym != output_sym_table.end() && iter->second.defined && iter_sym->second.defined){
             //double definition of symbol
             errors_to_print.push_back("Double definition of symbol " + iter->first);
             return false;
-          }else{
-            //add symbol to symbol table
+          }else if(iter->second.defined){
+            //add symbol to symbol table if its defined
             iter->second.id_temp = id_symbol++;
-            if(iter->second.section != -1){
-              //now i need offset of iter->section in aggregate section
-              //i need section name to index aggregate sections
-              //check this
-              Aggregate_section as = merged_sections[section_tables[file][iter->second.section].name];
-              iter->second.section = as.aggregate_id;
-              iter->second.value = iter->second.value + as.included_sections[file];//there is offset of current sectin in which is symbol
-            }
+            //now i need offset of iter->section in aggregate section
+            //i need section name to index aggregate sections
+            //check this
+            Aggregate_section as = merged_sections[section_tables[file][iter->second.section].name];
+            iter->second.section = as.aggregate_id;
+            iter->second.value = iter->second.value + as.included_sections[file];//there is offset of current sectin in which is symbol
             output_sym_table[iter->first] = iter->second;
           }
         }
