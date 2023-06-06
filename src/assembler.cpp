@@ -669,7 +669,12 @@ bool Assembler::process_instruction_second_pass(yytokentype instr_token, string 
       if(!make_ld_st(TOKEN_LD, addr, gpr1)){
         errors_to_print[line_n] = "Symbol value not found or value cannot be stored in 12 bits";
         return false;
+      }else{
+        if(addr->type == MEMDIR){
+          location_counter+=4;
+        }
       }
+
       break;
     }
     case TOKEN_ST:{

@@ -5,7 +5,7 @@ using namespace std;
 int main(int argc, const char* argv[]){
 
   //loading command line arguments
-  map<string, int> sections_to_be_placed;
+  map<string, unsigned int> sections_to_be_placed;
   bool is_hex = false;
   bool is_relocatable = false;
   bool flag = false;
@@ -21,7 +21,7 @@ int main(int argc, const char* argv[]){
     }else if(regex_search(iter, matched_arguments, place_section_regex)){
       string section = matched_arguments.str(1);
       string address = matched_arguments.str(2);
-      long section_addr = stol(address, nullptr, 16);
+      unsigned int section_addr = stol(address, nullptr, 16);
       sections_to_be_placed[section] = section_addr;
     }else if(iter == "-hex"){
       is_hex = true;

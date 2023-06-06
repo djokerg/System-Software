@@ -3,9 +3,9 @@
 Emulator * Emulator::instancePtr = nullptr;
 
 size_t Emulator::MEMORY_SIZE = 1UL << 32;
-int Emulator::START_PROGRAM_ADDRESS = 0x40000000;
+unsigned int Emulator::START_PROGRAM_ADDRESS = 0x40000000;
 int Emulator::NUM_OF_REGISTERS = 16;
-int Emulator::MEMORY_MAPPED_REGISTERS = 0xFFFFFF00;
+unsigned int Emulator::MEMORY_MAPPED_REGISTERS = 0xFFFFFF00;
 int Emulator::TIMER_STATUS_INDEX = 0;
 int Emulator::TERMINAL_STATUS_INDEX = 1;
 int Emulator::INTERUPT_STATUS_INDEX = 2;
@@ -13,11 +13,11 @@ int Emulator::FAULT_INSTRUCTION_CAUSE = 1;
 int Emulator::TIMER_CAUSE = 2;
 int Emulator::TERMINAL_CAUSE = 3;
 int Emulator::SOFTWARE_CAUSE = 4;
-int Emulator::TERM_IN = 0xFFFFFF04;
-int Emulator::TERM_OUT = 0xFFFFFF00;
-int Emulator::TIM_CFG = 0xFFFFFF10;
+unsigned int Emulator::TERM_IN = 0xFFFFFF04;
+unsigned int Emulator::TERM_OUT = 0xFFFFFF00;
+unsigned int Emulator::TIM_CFG = 0xFFFFFF10;
 
-int Emulator::read_int_from_memory(unsigned long address)
+unsigned int Emulator::read_int_from_memory(unsigned long address)
 {
   int* value = reinterpret_cast<int*>(static_cast<char*>(mapped_memory) + address);
   return *value;
@@ -90,7 +90,7 @@ void Emulator::print_segment_table()
 {
   for(map<int, Segment>::iterator iter = segment_table.begin();iter!=segment_table.end();iter++){
     emulator_debugging_file << "Segment: " << iter->first << endl;
-    emulator_debugging_file << "Address: " << iter->second.address << endl;
+    emulator_debugging_file << "Address: " << hex << iter->second.address << endl;
     emulator_debugging_file << "Size: " << iter->second.size << endl;
     int rows = (iter->second.size-1)/8+1;
     for(int i = 0; i < rows;i++){
@@ -143,10 +143,10 @@ void Emulator::mem_dump()
   char * mem_char = static_cast<char*>(this->mapped_memory);
   vector<pair<int, Segment>> sortedVector(segment_table.begin(), segment_table.end());
   sort(sortedVector.begin(), sortedVector.end(), compareByValue);
-  int begging = sortedVector.at(0).second.address;
-  int end = sortedVector.at(sortedVector.size()-1).second.address + sortedVector.at(sortedVector.size()-1).second.size;
-  int cnt = begging;
-  for (int i = begging; i < end; i++)
+  unsigned long begging = sortedVector.at(0).second.address;
+  unsigned long end = sortedVector.at(sortedVector.size()-1).second.address + sortedVector.at(sortedVector.size()-1).second.size;
+  unsigned long cnt = begging;
+  for (unsigned long i = begging; i < end; i++)
   {
       char c = mem_char[i];
       if (cnt % 8 == 0)
@@ -181,8 +181,6 @@ bool Emulator::start_program()
       //call interupt
       generate_interrupt(FAULT_INSTRUCTION_CAUSE);
     }
-
-
   }
 
   return true;
@@ -219,17 +217,20 @@ int Emulator::pop()
 
 bool Emulator::instruction_fetch_and_execute()
 {
-  int full_instr = read_int_from_memory(rpc);
+  unsigned int full_instr = read_int_from_memory(rpc);
   //as soon as i read instruction, i increase pc
   rpc+=4;
-  char byte1 = full_instr>>24;
-  char byte2 = full_instr>>16;
-  short byte34 = full_instr;
+  int byte1 = full_instr>>24;
+  int byte2 = full_instr>>16 & 0xff;
+  int byte34 = full_instr & 0xffff;
   mnemonic = (OP_CODE_MOD)byte1;
   regA = byte2>>4;
   regB = byte2 & 0xf;
   regC = byte34>>12;
   disp = byte34 & 0x0fff;
+  if(disp & 0x800){
+    disp = -((~disp & 0xfff)+ 1);
+  }
   if(regA > 15 || regA < 0 || regB > 15 || regB < 0 || regC > 15 || regC < 0){
     //non valid register number
     errors_to_print.push_back("Register number fault");
@@ -387,6 +388,7 @@ bool Emulator::instruction_fetch_and_execute()
     }
     case IRET_MEM_STATUS:{
       cs_registers[regA] = read_int_from_memory(gp_registers[regB] + gp_registers[regC] + disp);
+      break;
     }
     default:{
       errors_to_print.push_back("Instruction doesn't exist or it's not reachable from assembler");//can be updated
@@ -405,7 +407,7 @@ void Emulator::print_all_registers()
     if(i>0 && i%4 == 0){
       cout << endl;
     }
-    cout << "r0=" << hex << setfill('0') << setw(8) << gp_registers[i];
+    cout << "\tr" << dec << i << ":0x" << hex << setfill('0') << setw(8) << gp_registers[i];
   }
 }
 
@@ -418,10 +420,10 @@ bool Emulator::execute_file()
   if(!load_segment_data()){
     return false;
   }
-  mem_dump();
+  //mem_dump();
   //all needed data is loaded, now i can start reading from memory and executing
   start_program();
-  mem_dump();
+  //mem_dump();
   print_all_registers();
   return true;
 }

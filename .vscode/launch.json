@@ -8,8 +8,8 @@
       "name": "(gdb) Launch",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/emulator",
-      "args": ["program.hex"],
+      "program": "${workspaceFolder}/linker",
+      "args": ["-hex", "-place=my_code@0x40000000", "-place=math@0xF0000000", "-o", "program.hex","handler.o","math.o", "main.o" ,"isr_terminal.o","isr_timer.o","isr_software.o"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
@@ -26,9 +26,7 @@
               "text": "-gdb-set disassembly-flavor intel",
               "ignoreFailures": true
           }
-      ],
-      "preLaunchTask": "C/C++: g++ build project (make)",
-      "miDebuggerPath": "/usr/bin/gdb"
+      ]
     }
 
   ]

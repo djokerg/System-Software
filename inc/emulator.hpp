@@ -82,20 +82,20 @@ class Emulator{
 
   void* mapped_memory;
 
-  int read_int_from_memory(unsigned long address);
+  unsigned int read_int_from_memory(unsigned long address);
   char read_byte_from_memory(unsigned long address);
   void write_int_to_memory(unsigned long address, int num);
   void write_byte_to_memory(unsigned long address, char c);
   
-  vector<int> gp_registers;
-  vector<int> cs_registers;
+  vector<long> gp_registers;
+  vector<long> cs_registers;
 
   void set_flag(int flag);
   int get_flag(int flag);
   void reset_flag(int flag);
   //for easy accesss
-  int& rpc = gp_registers[pc];
-  int& rsp = gp_registers[sp];
+  long& rpc = gp_registers[pc];
+  long& rsp = gp_registers[sp];
 
   bool is_running;
 
@@ -150,16 +150,16 @@ public:
 
   //all constants i need
   static size_t MEMORY_SIZE;
-  static int START_PROGRAM_ADDRESS;
+  static unsigned int START_PROGRAM_ADDRESS;
   static int NUM_OF_REGISTERS;
-  static int MEMORY_MAPPED_REGISTERS;
+  static unsigned int MEMORY_MAPPED_REGISTERS;
   static int FAULT_INSTRUCTION_CAUSE;
   static int TIMER_CAUSE;
   static int TERMINAL_CAUSE;
   static int SOFTWARE_CAUSE;
-  static int TERM_OUT;
-  static int TERM_IN;
-  static int TIM_CFG;
+  static unsigned int TERM_OUT;
+  static unsigned int TERM_IN;
+  static unsigned int TIM_CFG;
   static int TIMER_STATUS_INDEX;
   static int TERMINAL_STATUS_INDEX;
   static int INTERUPT_STATUS_INDEX;

@@ -1,6 +1,6 @@
 #include "../inc/linker.hpp"
 
-void Linker::initialize(string output_file, vector<string> input_files, map<string, int> sections_placed, bool is_relocatable)
+void Linker::initialize(string output_file, vector<string> input_files, map<string, unsigned int> sections_placed, bool is_relocatable)
 {
   this->output_file = output_file;
   this->input_files = input_files;
@@ -164,8 +164,8 @@ bool Linker::map_aggregate_sections()
   //first iterate trouh placed sections
   //i need to sort aggregate_sections before this function
   //skip und section in every iteration
-  int first_free_address = 0;
-  for(map<string, int>::iterator iter = sections_placed.begin(); iter!=sections_placed.end();iter++){
+  unsigned int first_free_address = 0;
+  for(map<string, unsigned int>::iterator iter = sections_placed.begin(); iter!=sections_placed.end();iter++){
     merged_sections[iter->first].aggregate_address = iter->second;//with this data i know all vitrual addresses of sections
     if(iter->second + merged_sections[iter->first].aggregate_size > first_free_address){
       first_free_address = iter->second + merged_sections[iter->first].aggregate_size;
@@ -184,7 +184,7 @@ bool Linker::map_aggregate_sections()
       //skip undefined section while mapping
       continue;
     }
-    map<string,int>::iterator iter_placed = sections_placed.find(iter.first);
+    map<string,unsigned int>::iterator iter_placed = sections_placed.find(iter.first);
     if(iter_placed == sections_placed.end()){
       //update this section details
       merged_sections[iter.first].aggregate_address = first_free_address;
@@ -199,11 +199,11 @@ bool Linker::check_for_intersections()
 {
   for(map<string, Aggregate_section>::iterator iter = merged_sections.begin();iter!= merged_sections.end();iter++){
     //skip section which is not mapped already
-    map<string,int>::iterator iter_placed = sections_placed.find(iter->first);
+    map<string,unsigned int>::iterator iter_placed = sections_placed.find(iter->first);
     if(iter_placed != sections_placed.end()){
       //section places, so inspect
       for(map<string, Aggregate_section>::iterator iter_inner = merged_sections.begin();iter_inner !=merged_sections.end();iter_inner++){
-         map<string,int>::iterator iter_placed2 = sections_placed.find(iter_inner->first);
+         map<string,unsigned int>::iterator iter_placed2 = sections_placed.find(iter_inner->first);
           if(iter_placed2 != sections_placed.end()){
             //section places, check if its the same section
             if(iter->first != iter_inner->first){
@@ -222,7 +222,7 @@ bool Linker::check_for_intersections()
   return false;
 }
 
-bool Linker::is_intersection(int left1, int right1, int left2, int right2)
+bool Linker::is_intersection(unsigned int left1, unsigned int right1, unsigned int left2, unsigned int right2)
 {
   return max(left1,left2) < min(right1, right2);
 }
@@ -232,6 +232,10 @@ bool Linker::compareById(const pair<string, Aggregate_section>& a, const pair<st
   return a.second.aggregate_id < b.second.aggregate_id;
 }
 
+bool Linker::compareBySymbolId(const pair<string, Symbol_table_entry> &a, const pair<string, Symbol_table_entry> &b)
+{
+  return a.second.id_temp < b.second.id_temp;
+}
 void Linker::print_aggregate_sections()
 {
   linker_debugging_file << "#.sections" << endl;
@@ -270,6 +274,7 @@ bool Linker::merge_symbol_tables()
     Symbol_table_entry new_symbol;
     new_symbol.defined = true;
     new_symbol.global = false;
+    new_symbol.is_extern = false;
     new_symbol.id_temp = id_symbol++;
     new_symbol.name = iter.first;
     new_symbol.section = iter.second.aggregate_id;
@@ -335,30 +340,32 @@ bool Linker::merge_symbol_tables()
 
 void Linker::print_output_symbol_table()
 {
+  //sort this table
+  vector<pair<string,Symbol_table_entry>> mapVector(output_sym_table.begin(),output_sym_table.end());
+  sort(mapVector.begin(), mapVector.end(), compareBySymbolId);
+  //now i have mapVector for iterating
   linker_debugging_file << "#.output_symtab" << endl;
-    linker_debugging_file << "Num\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
-    map<string, Symbol_table_entry> symbol_table = output_sym_table;
-    for(map<string, Symbol_table_entry>::iterator it = symbol_table.begin(); it != symbol_table.end(); it++){
-
-      linker_debugging_file << it->second.id_temp << ":\t"; 
-      linker_debugging_file << hex << setfill('0') << setw(4) << (0xffff & it->second.value) << "\t";
-      linker_debugging_file << hex << setfill('0') << setw(4) << (0xffff & 0) << "\t";
-      linker_debugging_file << "NOTYPE\t";
-      if(it->second.global == false){
-        linker_debugging_file << "LOC\t\t";
+  linker_debugging_file << "Num\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
+  for(pair<string, Symbol_table_entry> iter: mapVector){
+    linker_debugging_file << iter.second.id_temp << ":\t"; 
+    linker_debugging_file << hex << setfill('0') << setw(8) << (iter.second.value) << "\t";
+    linker_debugging_file << hex << setfill('0') << setw(8) << 0 << "\t";
+    linker_debugging_file << "NOTYPE\t";
+    if(iter.second.global == false){
+      linker_debugging_file << "LOC\t\t";
+    }else{
+      if(iter.second.defined == true){
+        linker_debugging_file << "GLOB\t";
       }else{
-        if(it->second.defined == true){
+        if(iter.second.is_extern){
           linker_debugging_file << "GLOB\t";
-        }else{
-          if(it->second.is_extern){
-            linker_debugging_file << "GLOB\t";
-          }
         }
       }
-      linker_debugging_file << dec;
-      linker_debugging_file << it->second.section << "\t\t";//id sekcije
-      linker_debugging_file << it->second.name << endl;
     }
+    linker_debugging_file << dec;
+    linker_debugging_file << iter.second.section << "\t\t";//id sekcije
+    linker_debugging_file << iter.second.name << endl;
+  }
 }
 
 bool Linker::merge_relocation_tables()
@@ -371,7 +378,7 @@ bool Linker::merge_relocation_tables()
         Reloc_table_entry new_output;
         //add offset off in aggregate section, to have fully merged symbol table, if symbol is in fact section
         map<string, Aggregate_section>::iterator is_section = merged_sections.find(reloc.symbol);
-        int additional_addend = 0;
+        unsigned int additional_addend = 0;
         if(is_section != merged_sections.end()){
           additional_addend = merged_sections[reloc.symbol].included_sections[file];
         }
@@ -432,7 +439,7 @@ void Linker::print_output_section_data()
         int rows = (iter->second.aggregate_size-1)/8+1;
 
         for(int i = 0; i < rows;i++){
-          linker_debugging_file << hex << setfill('0') << setw(4) << (0xffff & i*8) << ": ";
+          linker_debugging_file << hex << setfill('0') << setw(8) << (0xffffffff & (i*8+iter->second.aggregate_address)) << ": ";
           for(int j = i*8; j < (i+1)*8;j++){
             char c;
             if(j<iter->second.aggregate_size){
@@ -465,7 +472,7 @@ bool Linker::resolve_relocations_hex()
   for(map<string, vector<Reloc_table_entry>>::iterator iter = output_reloc_table.begin();iter!=output_reloc_table.end();iter++){
     //now i have to find symbol which pass this allocation in some section
     for(Reloc_table_entry reloc : iter->second){
-      int symbol_value = 0;
+      unsigned int symbol_value = 0;
       map<string, Aggregate_section>::iterator is_section = merged_sections.find(reloc.symbol);
         if(is_section != merged_sections.end()){
           //it is section, so put its virual adress

@@ -13,7 +13,7 @@ class Linker{
   Linker();
   string output_file;
   vector<string> input_files;
-  map<string, int> sections_placed;
+  map<string, unsigned int> sections_placed;
   bool is_relocatable;
   ofstream linker_debugging_file;
   vector<string> errors_to_print;
@@ -28,12 +28,12 @@ class Linker{
     string name;
     int size;
     int section_id;
-    int virtual_address;
+    unsigned int virtual_address;
   };
 
   struct Symbol_table_entry{
     string name;
-    int value;
+    unsigned int value;
     bool global;
     bool is_extern;
     int section;
@@ -51,8 +51,8 @@ class Linker{
   struct Aggregate_section{
     int aggregate_id;
     int aggregate_size;
-    int aggregate_address;
-    map<string, int> included_sections;//pair file, offset in merged sections
+    unsigned int aggregate_address;
+    map<string, unsigned int> included_sections;//pair file, offset in merged sections
   };
 
   int current_aggregate_id;
@@ -73,8 +73,9 @@ class Linker{
   bool merge_same_name_sections();
   bool map_aggregate_sections();
   bool check_for_intersections();
-  bool is_intersection(int left1, int right1, int left2, int right2);
+  bool is_intersection(unsigned int left1, unsigned int right1, unsigned int left2, unsigned int right2);
   static bool compareById(const pair<string,Aggregate_section> &a, const pair<string,Aggregate_section> &b);
+  static bool compareBySymbolId(const pair<string,Symbol_table_entry> &a, const pair<string,Symbol_table_entry> &b);
   void print_aggregate_sections();
   void make_output_section_table();
   bool merge_symbol_tables();
@@ -95,7 +96,7 @@ public:
     return instancePtr;
   }
 
-  void initialize(string output_file, vector<string> input_files, map<string, int> sections_placed, bool is_relocatable);
+  void initialize(string output_file, vector<string> input_files, map<string, unsigned int> sections_placed, bool is_relocatable);
 
   bool proceed_linking();
 
