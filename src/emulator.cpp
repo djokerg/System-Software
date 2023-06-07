@@ -406,8 +406,17 @@ bool Emulator::instruction_fetch_and_execute()
       write_int_to_memory(read_int_from_memory(gp_registers[regA] + gp_registers[regB] + disp),gp_registers[regC]);
       break;
     }
-    case IRET_MEM_STATUS:{
+    case CSR_WR_MEM:{
       cs_registers[regA] = read_int_from_memory(gp_registers[regB] + gp_registers[regC] + disp);
+      break;
+    }
+    case CSR_WR_CSR:{
+      cs_registers[regA] = cs_registers[regB] | disp;
+      break; 
+    }
+    case CSR_POP:{
+      cs_registers[regA] = read_int_from_memory(gp_registers[regB]);
+      gp_registers[regB] = gp_registers[regB] + disp;
       break;
     }
     default:{

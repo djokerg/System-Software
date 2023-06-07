@@ -47,8 +47,11 @@ class Emulator{
     LD_GPR = 0b10010001,
     ST_MEM = 0b10000000,
     ST_MEM_MEM = 0b10000010,
-    IRET_MEM_STATUS = 0b10010110
+    CSR_WR_MEM = 0b10010110,
+    CSR_WR_CSR = 0b10010101,
+    CSR_POP = 0b10010111
   };  
+  //csr_wr_mem used in iret instruction
   enum GPRegisters{
     r0 = 0,
     r1,

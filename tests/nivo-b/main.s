@@ -12,7 +12,7 @@ my_start:
     st %r1, 0xFFFFFF10 # tim_cfg
 wait:
     ld my_counter, %r1
-    ld $3, %r2
+    ld $20, %r2
     bne %r1, %r2, wait
     halt
 

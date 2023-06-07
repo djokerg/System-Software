@@ -573,7 +573,7 @@ bool Assembler::process_instruction_second_pass(yytokentype instr_token, string 
     }
     case TOKEN_IRET:{
       //possibly wrong
-      int instr = make_machine_instruction(IRET_MEM_STATUS, 0 , 14, 0, 4);
+      int instr = make_machine_instruction(CSR_WR_MEM, 0 , 14, 0, 4);
       data[current_section].write((char*)(&instr), sizeof(int));
       instr = make_machine_instruction(POP, 15 , 14, 0, 8);
       data[current_section].write((char*)(&instr), sizeof(int));
