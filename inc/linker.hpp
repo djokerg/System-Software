@@ -15,7 +15,7 @@ class Linker{
   vector<string> input_files;
   map<string, unsigned int> sections_placed;
   bool is_relocatable;
-  ofstream linker_debugging_file;
+  ofstream txt_object_file;
   vector<string> errors_to_print;
   
   //strukture slicne kao u asebleru

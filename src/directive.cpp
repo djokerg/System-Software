@@ -97,6 +97,17 @@ bool Directive::visit_second_pass()
     case TOKEN_SECTION:{
       return Assembler::getInstance()->process_section_second_pass(arg_list->at(0).second.sym);
     }
+    case TOKEN_GLOBAL:{
+      bool flag = true;
+      for(int i = 0; i < arg_list->size();i++){
+        if(flag){
+          flag = Assembler::getInstance()->process_global_second_pass(arg_list->at(i).second.sym, line_num);
+        }else{
+          return flag;
+        }
+      }
+      return flag;
+    }
   }
   return true;
 }

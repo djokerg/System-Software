@@ -111,7 +111,7 @@ class Emulator{
   Emulator();
   string executable_file;
   vector<string> errors_to_print;
-  ofstream emulator_debugging_file;
+  ofstream mem_dump;
   struct Segment{
     unsigned int address;
     int size;
@@ -124,7 +124,7 @@ class Emulator{
   void print_segment_table();
   bool load_segment_data();
   static bool compareByValue(const pair<int, Segment>& a, const pair<int, Segment>& b);
-  void mem_dump();
+  void mem_dump_fn();
   bool start_program();
   void generate_interrupt(int cause);
   void push(int val);

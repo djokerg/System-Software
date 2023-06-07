@@ -6,9 +6,17 @@ void Linker::initialize(string output_file, vector<string> input_files, map<stri
   this->input_files = input_files;
   this->is_relocatable = is_relocatable;
   this->sections_placed = sections_placed;
+  //make output file
+  string txt_output;
+  if(is_relocatable){
+    txt_output = output_file.substr(0, output_file.size()-2) + "_txt.o";
+  }else{
+    txt_output = output_file.substr(0, output_file.size()-4) + "_txt.o";
+  }
+  txt_object_file.open(txt_output);
 }
 Linker * Linker::instancePtr = nullptr;
-Linker::Linker():linker_debugging_file("linker_debugging_file.txt"),current_aggregate_id(1){}
+Linker::Linker():current_aggregate_id(1){}
 
 bool Linker::create_tables_from_input()
 {
@@ -238,14 +246,14 @@ bool Linker::compareBySymbolId(const pair<string, Symbol_table_entry> &a, const 
 }
 void Linker::print_aggregate_sections()
 {
-  linker_debugging_file << "#.sections" << endl;
-  linker_debugging_file << "Address\t\tSize\tNdx\tName" << endl;
+  txt_object_file << "#.output_sections" << endl;
+  txt_object_file << "Address\t\tSize\tNdx\tName" << endl;
   for(map<string, Aggregate_section>::iterator iter = merged_sections.begin(); iter!=merged_sections.end();iter++){
-    linker_debugging_file << hex << setfill('0') << setw(8) << (0xffffffff & iter->second.aggregate_address) << "\t";
-    linker_debugging_file << hex << setfill('0') << setw(4) << (0xffff & iter->second.aggregate_size) << "\t";
-    linker_debugging_file << dec;
-    linker_debugging_file << iter->second.aggregate_id << "\t\t";
-    linker_debugging_file << iter->first << endl;
+    txt_object_file << hex << setfill('0') << setw(8) << (0xffffffff & iter->second.aggregate_address) << "\t";
+    txt_object_file << hex << setfill('0') << setw(4) << (0xffff & iter->second.aggregate_size) << "\t";
+    txt_object_file << dec;
+    txt_object_file << iter->second.aggregate_id << "\t\t";
+    txt_object_file << iter->first << endl;
   }
 }
 //leave for the end
@@ -342,27 +350,31 @@ void Linker::print_output_symbol_table()
   vector<pair<string,Symbol_table_entry>> mapVector(output_sym_table.begin(),output_sym_table.end());
   sort(mapVector.begin(), mapVector.end(), compareBySymbolId);
   //now i have mapVector for iterating
-  linker_debugging_file << "#.output_symtab" << endl;
-  linker_debugging_file << "Num\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
+  txt_object_file << "#.output_symtab" << endl;
+  txt_object_file << "Num\tValue\t\t\tTYPE\t\tBind\tNdx\tName" << endl;
   for(pair<string, Symbol_table_entry> iter: mapVector){
-    linker_debugging_file << iter.second.id_temp << ":\t"; 
-    linker_debugging_file << hex << setfill('0') << setw(8) << (iter.second.value) << "\t";
-    linker_debugging_file << hex << setfill('0') << setw(8) << 0 << "\t";
-    linker_debugging_file << "NOTYPE\t";
+    txt_object_file << iter.second.id_temp << ":\t"; 
+    txt_object_file << hex << setfill('0') << setw(8) << (iter.second.value) << "\t";
+    map<string,Aggregate_section>::iterator iter_sections = merged_sections.find(iter.first);
+    if(iter_sections != merged_sections.end()){
+      txt_object_file << "SCTN\t\t";
+    }else{
+      txt_object_file << "NOTYPE\t";
+    }
     if(iter.second.global == false){
-      linker_debugging_file << "LOC\t\t";
+      txt_object_file << "LOC\t\t";
     }else{
       if(iter.second.defined == true){
-        linker_debugging_file << "GLOB\t";
+        txt_object_file << "GLOB\t";
       }else{
         if(iter.second.is_extern){
-          linker_debugging_file << "GLOB\t";
+          txt_object_file << "GLOB\t";
         }
       }
     }
-    linker_debugging_file << dec;
-    linker_debugging_file << iter.second.section << "\t\t";//id sekcije
-    linker_debugging_file << iter.second.name << endl;
+    txt_object_file << dec;
+    txt_object_file << iter.second.section << "\t\t";//id sekcije
+    txt_object_file << iter.second.name << endl;
   }
 }
 
@@ -393,13 +405,13 @@ bool Linker::merge_relocation_tables()
 void Linker::print_output_relocation_table()
 {
   for(map<string, vector<Reloc_table_entry>>::iterator it = output_reloc_table.begin(); it != output_reloc_table.end(); it++){
-    linker_debugging_file << "#.reloc." << it->first << endl;
-    linker_debugging_file << "Offset\tSymbol\tAddend" << endl;
+    txt_object_file << "#.reloc." << it->first << endl;
+    txt_object_file << "Offset\tSymbol\tAddend" << endl;
     vector <Reloc_table_entry> reloc_table_vector = it->second;
     for(Reloc_table_entry relocs : reloc_table_vector){
-      linker_debugging_file << hex << setfill('0') << setw(4) << (0xffff & relocs.offset) << "\t\t" << relocs.symbol << "\t\t" << setfill('0') << setw(4) << (0xffff & relocs.addend) << endl;
+      txt_object_file << hex << setfill('0') << setw(4) << (0xffff & relocs.offset) << "\t\t" << relocs.symbol << "\t\t" << setfill('0') << setw(4) << (0xffff & relocs.addend) << endl;
     }
-    linker_debugging_file << dec;
+    txt_object_file << dec;
   }
 }
 
@@ -428,16 +440,16 @@ bool Linker::merge_section_data()
 void Linker::print_output_section_data()
 {
   for(map<string, Aggregate_section>::iterator iter = merged_sections.begin(); iter != merged_sections.end();iter++){
-      linker_debugging_file << "Section " << iter->first << ":"<<endl;
+      txt_object_file << "Section " << iter->first << ":"<<endl;
       if(iter->second.aggregate_size == 0){
-        linker_debugging_file << "NO DATA" << endl;
+        txt_object_file << "NO DATA" << endl;
       }else{
 
-        linker_debugging_file << "num_of_bytes " << iter->second.aggregate_size << endl;
+        txt_object_file << "num_of_bytes " << iter->second.aggregate_size << endl;
         int rows = (iter->second.aggregate_size-1)/8+1;
 
         for(int i = 0; i < rows;i++){
-          linker_debugging_file << hex << setfill('0') << setw(8) << (0xffffffff & (i*8+iter->second.aggregate_address)) << ": ";
+          txt_object_file << hex << setfill('0') << setw(8) << (0xffffffff & (i*8+iter->second.aggregate_address)) << ": ";
           for(int j = i*8; j < (i+1)*8;j++){
             char c;
             if(j<iter->second.aggregate_size){
@@ -446,10 +458,10 @@ void Linker::print_output_section_data()
             else{
               c = 0;
             }
-              linker_debugging_file << hex << setfill('0') << setw(2) << (0xff & c) << " ";
-              linker_debugging_file << dec;
+              txt_object_file << hex << setfill('0') << setw(2) << (0xff & c) << " ";
+              txt_object_file << dec;
           } 
-          linker_debugging_file << endl;
+          txt_object_file << endl;
         }
       } 
     } 
@@ -651,6 +663,7 @@ bool Linker::proceed_linking()
 
 void Linker::print_errors()
 {
+  cout << "Linker\n";
   cout << "Error messages:" << "\n";
   for(auto i : errors_to_print){
   cout << i << endl;
@@ -660,29 +673,29 @@ void Linker::print_errors()
 void Linker::print_symbol_table()
 {
   for(string file:input_files){
-    linker_debugging_file << "#.symtab" << endl;
-    linker_debugging_file << "Num\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
+    txt_object_file << "#.symtab" << endl;
+    txt_object_file << "Num\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
     map<string, Symbol_table_entry> symbol_table = symbol_tables[file];
     for(map<string, Symbol_table_entry>::iterator it = symbol_table.begin(); it != symbol_table.end(); it++){
 
-      linker_debugging_file << it->second.id_temp << ":\t"; 
-      linker_debugging_file << hex << setfill('0') << setw(4) << (0xffff & it->second.value) << "\t";
-      linker_debugging_file << hex << setfill('0') << setw(4) << (0xffff & 0) << "\t";
-      linker_debugging_file << "NOTYPE\t";
+      txt_object_file << it->second.id_temp << ":\t"; 
+      txt_object_file << hex << setfill('0') << setw(4) << (0xffff & it->second.value) << "\t";
+      txt_object_file << hex << setfill('0') << setw(4) << (0xffff & 0) << "\t";
+      txt_object_file << "NOTYPE\t";
       if(it->second.global == false){
-        linker_debugging_file << "LOC\t\t";
+        txt_object_file << "LOC\t\t";
       }else{
         if(it->second.defined == true){
-          linker_debugging_file << "GLOB\t";
+          txt_object_file << "GLOB\t";
         }else{
           if(it->second.is_extern){
-            linker_debugging_file << "GLOB\t";
+            txt_object_file << "GLOB\t";
           }
         }
       }
-      linker_debugging_file << dec;
-      linker_debugging_file << it->second.section << "\t\t";//id sekcije
-      linker_debugging_file << it->second.name << endl;
+      txt_object_file << dec;
+      txt_object_file << it->second.section << "\t\t";//id sekcije
+      txt_object_file << it->second.name << endl;
     }
   }
 }
@@ -690,19 +703,19 @@ void Linker::print_symbol_table()
 void Linker::print_section_table()
 {
   for(string file:input_files){
-    linker_debugging_file << "#.sections" << endl;
-    linker_debugging_file << "Num\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
+    txt_object_file << "#.sections" << endl;
+    txt_object_file << "Num\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
     map<int, Section_table_entry> section_table = section_tables[file];
     for(map<int, Section_table_entry>::iterator it = section_table.begin(); it != section_table.end(); it++){
 
-      linker_debugging_file << it->second.section_id << ":\t"; 
-      linker_debugging_file << hex << setfill('0') << setw(4) << (0xffff & 0) << "\t";
-      linker_debugging_file << hex << setfill('0') << setw(4) << (0xffff & it->second.size) << "\t";
-      linker_debugging_file << "SCTN\t";
-      linker_debugging_file << "LOC\t\t\t";
-      linker_debugging_file << dec;
-      linker_debugging_file << it->second.section_id << "\t\t";
-      linker_debugging_file << it->second.name << endl;
+      txt_object_file << it->second.section_id << ":\t"; 
+      txt_object_file << hex << setfill('0') << setw(4) << (0xffff & 0) << "\t";
+      txt_object_file << hex << setfill('0') << setw(4) << (0xffff & it->second.size) << "\t";
+      txt_object_file << "SCTN\t";
+      txt_object_file << "LOC\t\t\t";
+      txt_object_file << dec;
+      txt_object_file << it->second.section_id << "\t\t";
+      txt_object_file << it->second.name << endl;
     }
   }
 }
@@ -712,13 +725,13 @@ void Linker::print_reloc_table()
   for(string file:input_files){
     map<string,vector<Reloc_table_entry>> relocation_table = relocation_tables[file];
     for(map<string, vector<Reloc_table_entry>>::iterator it = relocation_table.begin(); it != relocation_table.end(); it++){
-    linker_debugging_file << "#.reloc." << it->first << endl;
-    linker_debugging_file << "Offset\tSymbol\tAddend" << endl;
+    txt_object_file << "#.reloc." << it->first << endl;
+    txt_object_file << "Offset\tSymbol\tAddend" << endl;
     vector <Reloc_table_entry> reloc_table_vector = it->second;
     for(Reloc_table_entry relocs : reloc_table_vector){
-      linker_debugging_file << hex << setfill('0') << setw(4) << (0xffff & relocs.offset) << "\t\t" << relocs.symbol << "\t\t" << setfill('0') << setw(4) << (0xffff & relocs.addend) << endl;
+      txt_object_file << hex << setfill('0') << setw(4) << (0xffff & relocs.offset) << "\t\t" << relocs.symbol << "\t\t" << setfill('0') << setw(4) << (0xffff & relocs.addend) << endl;
     }
-    linker_debugging_file << dec;
+    txt_object_file << dec;
   }
   }
 }
@@ -728,17 +741,17 @@ void Linker::print_section_data()
   for(string file:input_files){
     map<int, Section_table_entry> section_table = section_tables[file];
     for(map<int, Section_table_entry>::iterator iter = section_table.begin(); iter != section_table.end();iter++){
-      linker_debugging_file << "Section " << iter->second.name << ":"<<endl;
+      txt_object_file << "Section " << iter->second.name << ":"<<endl;
       if(iter->second.size == 0){
-        linker_debugging_file << "NO DATA" << endl;
+        txt_object_file << "NO DATA" << endl;
       }else{
         Section_table_entry entry = iter->second;
 
-        linker_debugging_file << "num_of_bytes " << entry.size << endl;
+        txt_object_file << "num_of_bytes " << entry.size << endl;
         int rows = (entry.size-1)/8+1;
 
         for(int i = 0; i < rows;i++){
-          linker_debugging_file << hex << setfill('0') << setw(4) << (0xffff & i*8) << ": ";
+          txt_object_file << hex << setfill('0') << setw(4) << (0xffff & i*8) << ": ";
           for(int j = i*8; j < (i+1)*8;j++){
             char c;
             if(j<entry.size){
@@ -748,10 +761,10 @@ void Linker::print_section_data()
             else{
               c = 0;
             }
-              linker_debugging_file << hex << setfill('0') << setw(2) << (0xff & c) << " ";
-              linker_debugging_file << dec;
+              txt_object_file << hex << setfill('0') << setw(2) << (0xff & c) << " ";
+              txt_object_file << dec;
           } 
-          linker_debugging_file << endl;
+          txt_object_file << endl;
         }
       } 
     } 

@@ -6,6 +6,7 @@
 #include <map>
 #include <fstream>
 #include <iomanip>
+#include <algorithm>
 #include "../inc/directive.hpp"
 #include "../misc/lexer.hpp"
 #include "../misc/parser.hpp"
@@ -99,7 +100,7 @@ class Assembler{
   const char* input_file_path;
   const char* output_file_name;
 
-  ofstream debugging_file;
+  ofstream txt_object_file;
 
   void place_literal_pool();
 
@@ -145,6 +146,10 @@ class Assembler{
 
   void create_binary_file();
 
+  bool process_global_second_pass(string symbol_name, int line_num);
+
+  static bool compareById(pair<string,Symbol_table_entry>& a,pair<string,Symbol_table_entry>& b);
+
   map<int, string> errors_to_print;//int shows line, string is message about that line
 
   bool finished_pass = false;
@@ -165,6 +170,9 @@ public:
   void initialize(const char* input_file, const char* output_file){
     this->input_file_path = input_file;
     this->output_file_name = output_file;
+    string txt_output = output_file;
+    txt_output = txt_output.substr(0, txt_output.size()-2) + "_txt.o";
+    txt_object_file.open(txt_output);
   }
 
   void print_symbol_table();

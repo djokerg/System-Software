@@ -63,7 +63,7 @@ void Emulator::reset_flag(int flag)
   cs_registers[status] &= ~flag;
 }
 
-Emulator::Emulator() : emulator_debugging_file("emulator_debugging_file.txt"),is_running(false),gp_registers(NUM_OF_REGISTERS, 0),cs_registers(3, 0), terminal_interrupt(false){}
+Emulator::Emulator() : mem_dump("mem_dump.txt"),is_running(false),gp_registers(NUM_OF_REGISTERS, 0),cs_registers(3, 0), terminal_interrupt(false){}
 
 bool Emulator::create_segment_table()
 {
@@ -95,13 +95,14 @@ bool Emulator::create_segment_table()
 
 void Emulator::print_segment_table()
 {
+  mem_dump << "Loaded segments from hex file" << endl;
   for(map<int, Segment>::iterator iter = segment_table.begin();iter!=segment_table.end();iter++){
-    emulator_debugging_file << "Segment: " << iter->first << endl;
-    emulator_debugging_file << "Address: " << hex << iter->second.address << endl;
-    emulator_debugging_file << "Size: " << iter->second.size << endl;
+    mem_dump << "Segment: " << iter->first << endl;
+    mem_dump << "Address: " << hex << iter->second.address << endl;
+    mem_dump << "Size: " << iter->second.size << endl;
     int rows = (iter->second.size-1)/8+1;
     for(int i = 0; i < rows;i++){
-      emulator_debugging_file << hex << setfill('0') << setw(4) << (0xffff & i*8) << ": ";
+      mem_dump << hex << setfill('0') << setw(4) << (0xffff & i*8) << ": ";
       for(int j = i*8; j < (i+1)*8;j++){
         char c;
         if(j<iter->second.size){
@@ -110,10 +111,10 @@ void Emulator::print_segment_table()
         else{
           c = 0;
         }
-          emulator_debugging_file << hex << setfill('0') << setw(2) << (0xff & c) << " ";
-          emulator_debugging_file << dec;
+          mem_dump << hex << setfill('0') << setw(2) << (0xff & c) << " ";
+          mem_dump << dec;
       } 
-      emulator_debugging_file << endl;
+      mem_dump << endl;
     }
   }
 }
@@ -143,31 +144,33 @@ bool Emulator::compareByValue(const pair<int, Segment> &a, const pair<int, Segme
   return a.second.address < b.second.address;
 }
 
-void Emulator::mem_dump()
+void Emulator::mem_dump_fn()
 {
-  ofstream mem_dump("mem_dump.txt", ios::binary);
-
-  char * mem_char = static_cast<char*>(this->mapped_memory);
+  
   vector<pair<int, Segment>> sortedVector(segment_table.begin(), segment_table.end());
   sort(sortedVector.begin(), sortedVector.end(), compareByValue);
-  unsigned long begging = sortedVector.at(0).second.address;
-  unsigned long end = sortedVector.at(sortedVector.size()-1).second.address + sortedVector.at(sortedVector.size()-1).second.size;
-  unsigned long cnt = begging;
-  for (unsigned long i = begging; i < end; i++)
-  {
-      char c = mem_char[i];
-      if (cnt % 8 == 0)
-      {
-          mem_dump << hex << setfill('0') << setw(4) << (0xffffffff & cnt) << ":   ";
+  mem_dump << "-------------------------------------------------" << endl;
+  mem_dump << "Memory mapped segments at the end of the program" << endl;
+  for(pair<int,Segment> s: sortedVector){
+    unsigned int first = s.second.address;
+    int rows = (s.second.size-1)/8+1;
+    for(unsigned int i = 0; i < rows;i++){
+      mem_dump << hex << setfill('0') << setw(8) << (0xffffffff & (i*8+s.second.address)) << ": ";
+      for(int j = i*8; j < (i+1)*8;j++){
+        char c;
+        if(j<s.second.size){
+          c = read_byte_from_memory(j+first);
+        }
+        else{
+          c = 0;
+        }
+          mem_dump << hex << setfill('0') << setw(2) << (0xff & c) << " ";
+          mem_dump << dec;
       }
-      mem_dump << hex << setfill('0') << setw(2) << (0xff & c) << " ";
-      cnt++;
-      if (cnt % 8 == 0)
-      {
-          mem_dump << endl;
-      }
+      mem_dump << endl;
+    }
+    mem_dump << dec;
   }
-  mem_dump.close();
 }
 
 bool Emulator::start_program()
@@ -470,19 +473,23 @@ bool Emulator::execute_file()
   if(!load_segment_data()){
     return false;
   }
-  //mem_dump();
+  //mem_dump();-dont print like this, bad way
   //all needed data is loaded, now i can start reading from memory and executing
   if(!start_program()){
     return false;
   }
-  //mem_dump();
+  mem_dump_fn();
   print_all_registers();
+  mem_dump.close();
+  munmap(mapped_memory,MEMORY_SIZE);
   return true;
 }
 
 void Emulator::print_errors()
 {
+  cout << "Linker\n";
+  cout << "Error messages:" << "\n";
   for(string error : errors_to_print){
-    emulator_debugging_file << error << endl;
+    mem_dump << error << endl;
   }
 }

@@ -1,5 +1,3 @@
-/* If we want to use other functions, we have to put the relevant
- * header includes here. */
 %{
 	#include "../inc/helpers.hpp"
   #include "../inc/addressing.hpp"
@@ -10,11 +8,8 @@
   extern int line_num;
 %}
 
-/* These declare our output file names. */
 %output "parser.cpp"
 %defines "parser.hpp"
-/* This union defines the possible return types of both lexer and
- * parser rules. We'll refer to these later on by the field name */
 %union {
 	int         num;
 	char       *symbol;
@@ -22,8 +17,6 @@
   class Addressing* adr;
 }
 
-/* These define the tokens that we use in the lexer.
- * All of these have no meaningful return value. */
 
 %token <symbol> TOKEN_GLOBAL
 %token <symbol> TOKEN_EXTERN
@@ -71,33 +64,18 @@
 %token TOKEN_LSQB;
 %token TOKEN_RSQB;
 %token TOKEN_PLUS;
-/* These are ALSO used in the lexer, but in addition to
- * being tokens, they also have return values associated
- * with them. We name those according to the names we used
- * above, in the %union declaration. So, the TOKEN_NUM
- * rule will return a value of the same type as num, which
- * (in this case) is an int. */
-//%token <num>   TOKEN_NUM
 %token <symbol> TOKEN_SYMBOL
 %token <symbol> TOKEN_LABEL
 %token <num> TOKEN_LITERAL
 %token <symbol> TOKEN_STRING
-/* These are non-terminals in our grammar, by which I mean, parser
- * rules down below. Each of these also has a meaningful return type,
- * which is declared in the same way. */
 
 %type <arg> list_symbol;
 %type <arg> list_literal_or_symbol;
-%type <adr> operand;//srediti ovo??
-//%type <ident> rname;
+%type <adr> operand;
 
 %%
 
-/* A program is defined recursively as either empty or an instruction
- * followed by another program. In this case, there's nothing meaningful
- * for us to do or return as an action, so we omit any action after the
- * rules. */
-
+//it works when prog line endls is there
 prog
 : 
 line ENDLS
@@ -117,13 +95,6 @@ ENDLS:
   }
   ;
 
-
-/* An instruction, in our toy assembly, is always an identifier (which
- * is the instruction name) and possibly arguments. The numbers in the
- * variable here refer to the position of the argument we want, and
- * will refer to either the result of the rule (in the case of other
- * parser rules) or the contents of yylval (in the case of lexer
- * tokens.) */
 line
 :
   label operation
@@ -292,15 +263,6 @@ directive
     list_of_lang_elems->push_back(new Directive(TOKEN_END, line_num, $1));
   }
 ;
-/* An argument in this case has multiple choices: it can be a register
- * plus an offset, in which case it must be surrounded by parens, or
- * it can be just a register, in which case the parens are optional.
- *
- * The 'return value' of a rule is always stored in the $$ variable.
- * Here, I also name the results of terminals and non-terminals, instead
- * of addressing them by number.
- */
-
 
 list_literal_or_symbol
 : TOKEN_LITERAL 

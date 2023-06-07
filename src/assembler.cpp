@@ -4,7 +4,7 @@
 #include "../inc/instruction.hpp"
 #include "../inc/addressing.hpp"
 
-Assembler::Assembler():location_counter(0), current_id_section_table(0), current_id_symbol_table(0), current_section(""), debugging_file("debugging_file.txt"){
+Assembler::Assembler():location_counter(0), current_id_section_table(0), current_id_symbol_table(0), current_section(""){
 	Section_table_entry undefined;
   undefined.name = "UND";
   undefined.section_id = current_id_section_table++;
@@ -231,11 +231,8 @@ bool Assembler::make_ld_st(yytokentype instr_token, Addressing *addr, int gpr1)
           opcode = LD_MEM;
           int displacement = 0;
           if(addr->symbol){
-            if(symbol_table[addr->symbol].section == "ABSOLUTE"){
-              displacement = symbol_table[addr->symbol].value;
-            }else{
-              return false;
-            }
+            //there i can return false immediately
+            return false;
           }else{
             displacement = addr->literal;
           }
@@ -412,6 +409,18 @@ void Assembler::create_binary_file()
   binary_file.close();
 }
 
+bool Assembler::process_global_second_pass(string symbol_name, int line_num)
+{
+  if(!symbol_table[symbol_name].defined){
+    errors_to_print[line_num] = "Symbol " + symbol_name + " not defined, but declared as global.";
+  }
+  return true;
+}
+bool Assembler::compareById(pair<string, Symbol_table_entry> &a, pair<string, Symbol_table_entry> &b)
+{
+  return a.second.id_temp < b.second.id_temp;
+}
+
 bool Assembler::process_label_first_pass(string label_name, int line_num)
 {
   if(current_section == ""){
@@ -422,7 +431,6 @@ bool Assembler::process_label_first_pass(string label_name, int line_num)
 
 	if( iter != symbol_table.end()){
 		//error, double definition of label
-
     if(iter->second.defined == true){
 		  errors_to_print[line_num] = "Double definition of a symbol";
       return false;
@@ -447,7 +455,6 @@ bool Assembler::process_label_first_pass(string label_name, int line_num)
     label_symbol.value = location_counter;
     symbol_table[label_name] = label_symbol;  
   }
-  debugging_file << "Processed label " << label_name << endl;
   return true;
 }
 
@@ -468,7 +475,6 @@ bool Assembler::process_global_first_pass(string symbol_name, int line_num)
     new_sym.value = 0;//nedefinisan
     symbol_table[symbol_name] = new_sym;
   }
-  debugging_file << "Processed global symbol " << symbol_name << endl;
   return true;
 }
 
@@ -696,35 +702,33 @@ bool Assembler::process_instruction_second_pass(yytokentype instr_token, string 
     }
   }
   location_counter+=4;
-  debugging_file << "Instruction " << mnemonic << " stored in section data(memory)" << endl;
   return true;
 }
 
 void Assembler::print_symbol_table()
 {
-
-  debugging_file << "#.symtab" << endl;
-  debugging_file << "Id\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
-  for(map<string, Symbol_table_entry>::iterator it = symbol_table.begin(); it != symbol_table.end(); it++){
-
-    debugging_file << it->second.id_temp << "\t"; 
-    debugging_file << hex << setfill('0') << setw(4) << (0xffff & it->second.value) << "\t";
-    debugging_file << hex << setfill('0') << setw(4) << (0xffff & 0) << "\t";
-    debugging_file << "NOTYPE\t";
-    if(it->second.global == false){
-      debugging_file << "LOC\t\t";
+  txt_object_file << "#.symtab" << endl;
+  txt_object_file << "Id\tValue\tTYPE\tBind\tNdx\tName" << endl;
+  //sort symbol table by symbol id
+  vector<pair<string,Symbol_table_entry>> mapVector(symbol_table.begin(),symbol_table.end());
+  sort(mapVector.begin(), mapVector.end(), compareById);
+  for(pair<string, Symbol_table_entry> iter: mapVector){
+    txt_object_file << iter.second.id_temp << ":\t"; 
+    txt_object_file << hex << setfill('0') << setw(4) << (0xffff & iter.second.value) << "\t";
+    map<string,Section_table_entry>::iterator iter_sections = section_table.find(iter.first);
+    if(iter_sections != section_table.end()){
+      txt_object_file << "SCTN\t\t";
     }else{
-      if(it->second.defined == true){
-        debugging_file << "GLOB\t";
-      }else{
-        if(it->second.is_extern){
-          debugging_file << "GLOB\t";
-        }
-      }
+      txt_object_file << "NOTYPE\t";
     }
-    debugging_file << dec;
-    debugging_file << section_table[it->second.section].section_id << "\t\t";//id sekcije
-    debugging_file << it->second.name << endl;
+    if(iter.second.global == false){
+      txt_object_file << "LOC\t\t";
+    }else{
+      txt_object_file << "GLOB\t";
+    }
+    txt_object_file << dec;
+    txt_object_file << section_table[iter.second.section].section_id << "\t\t";//id sekcije
+    txt_object_file << iter.second.name << endl;
   }
 
 
@@ -732,48 +736,48 @@ void Assembler::print_symbol_table()
 
 void Assembler::print_section_table()
 {
-  debugging_file << "#.sections" << endl;
-  debugging_file << "Id\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
+  txt_object_file << "#.sections" << endl;
+  txt_object_file << "Id\tValue\tSize\tTYPE\tBind\tNdx\tName" << endl;
   for(map<string, Section_table_entry>::iterator it = section_table.begin(); it != section_table.end(); it++){
 
-    debugging_file << it->second.section_id << "\t"; 
-    debugging_file << hex << setfill('0') << setw(4) << (0xffff & 0) << "\t";
-    debugging_file << hex << setfill('0') << setw(4) << (0xffff & it->second.size) << "\t";
-    debugging_file << "SCTN\t";
-    debugging_file << "LOC\t\t\t";
-    debugging_file << dec;
-    debugging_file << it->second.section_id << "\t\t";
-    debugging_file << it->second.name << endl;
+    txt_object_file << it->second.section_id << "\t"; 
+    txt_object_file << hex << setfill('0') << setw(4) << (0xffff & 0) << "\t";
+    txt_object_file << hex << setfill('0') << setw(4) << (0xffff & it->second.size) << "\t";
+    txt_object_file << "SCTN\t";
+    txt_object_file << "LOC\t\t\t";
+    txt_object_file << dec;
+    txt_object_file << it->second.section_id << "\t\t";
+    txt_object_file << it->second.name << endl;
   }
 }
 
 void Assembler::print_reloc_table()
 {
   for(map<string, vector<Reloc_table_entry>>::iterator it = relocation_table.begin(); it != relocation_table.end(); it++){
-    debugging_file << "#.reloc." << it->first << endl;
-    debugging_file << "Offset\tType\tSymbol\t\t\t\tAddend" << endl;
+    txt_object_file << "#.reloc." << it->first << endl;
+    txt_object_file << "Offset\tType\tSymbol\t\t\t\tAddend" << endl;
     vector <Reloc_table_entry> reloc_table_vector = it->second;
     for(Reloc_table_entry relocs : reloc_table_vector){
-      debugging_file << hex << setfill('0') << setw(4) << (0xffff & relocs.offset) << "\t" << relocs.type << "\t" << relocs.symbol << "\t" << setfill('0') << setw(4) << (0xffff & relocs.addend) << "\t" << endl;
+      txt_object_file << hex << setfill('0') << setw(4) << (0xffff & relocs.offset) << "\t" << relocs.type << "\t" << relocs.symbol << "\t" << setfill('0') << setw(4) << (0xffff & relocs.addend) << "\t" << endl;
     }
-    debugging_file << dec;
+    txt_object_file << dec;
   }
 }
 
 void Assembler::print_sections_data()
 {
  for(map<string, Section_table_entry>::iterator iter = section_table.begin(); iter != section_table.end();iter++){
-  debugging_file << "Section " << iter->first << ":"<<endl;
+  txt_object_file << "Section " << iter->first << ":"<<endl;
   if(iter->second.size == 0){
-    debugging_file << "NO DATA" << endl;
+    txt_object_file << "NO DATA" << endl;
   }else{
     Section_table_entry entry = iter->second;
 
-    debugging_file << "num_of_bytes " << entry.size << endl;
+    txt_object_file << "num_of_bytes " << entry.size << endl;
     int rows = (entry.size-1)/8+1;
 
     for(int i = 0; i < rows;i++){
-      debugging_file << hex << setfill('0') << setw(4) << (0xffff & i*8) << ": ";
+      txt_object_file << hex << setfill('0') << setw(4) << (0xffff & i*8) << ": ";
       for(int j = i*8; j < (i+1)*8;j++){
         char c;
         if(j<entry.size){
@@ -783,10 +787,10 @@ void Assembler::print_sections_data()
         else{
           c = 0;
         }
-          debugging_file << hex << setfill('0') << setw(2) << (0xff & c) << " ";
-          debugging_file << dec;
+          txt_object_file << hex << setfill('0') << setw(2) << (0xff & c) << " ";
+          txt_object_file << dec;
       } 
-      debugging_file << endl;
+      txt_object_file << endl;
     }
   } 
  } 
@@ -814,7 +818,6 @@ bool Assembler::process_extern_first_pass(string symbol_name, int line_num)
     new_sym.value = 0;
     symbol_table[symbol_name] = new_sym;
   }
-  debugging_file << "Processed external symbol " << symbol_name << endl;
   return true;
 }
 
@@ -827,7 +830,6 @@ bool Assembler::process_section_first_pass(string section_name, int line_num)
   }
   if(current_section != ""){
     section_table[current_section].size = location_counter;
-    debugging_file << "End of section " << current_section << endl;
   }
   location_counter = 0;
   current_section = section_name;
@@ -850,7 +852,6 @@ bool Assembler::process_section_first_pass(string section_name, int line_num)
   section_table[section_name] = new_section;
 
   data[section_name] = stringstream();
-  debugging_file << "New section " << section_name << endl;
   return true;
 }
 
@@ -863,7 +864,6 @@ bool Assembler::process_skip_first_pass(int value, int line)
   }
   else{
     location_counter += value;
-    debugging_file << "Skipped " << value << " bytes-first pass" << endl;
     return true;
   }
   
@@ -882,12 +882,9 @@ bool Assembler::compile()
 	yyin = myfile;
 	if (yyparse())
 		return false;//not regular
-	
-	for(int i =0; i < list_of_lang_elems->size(); i++){
-		list_of_lang_elems->at(i)->print_le();
-	}
-  // for(int i =0; i < list_of_lang_elems->size(); i++){
-	// 	list_of_lang_elems->at(i)->visit();
+	fclose(myfile);
+	// for(int i =0; i < list_of_lang_elems->size(); i++){
+	// 	list_of_lang_elems->at(i)->print_le();
 	// }
 
   if(first_pass() == false) return false;
@@ -908,7 +905,6 @@ bool Assembler::process_word_first_pass(pair<bool, Uni> argument, int line_num)
   }
   
   location_counter+=4;
-  debugging_file << "Reserved 4 bytes for word argument"<< endl;
   return true;
 
 }
@@ -916,6 +912,7 @@ Assembler *Assembler::instancePtr = nullptr;
 
 void Assembler::print_errors()
 {
+  cout << "Assembler\n";
   cout << "Error messages:" << "\n";
   for(auto i : errors_to_print){
     cout << "Error on line "<< i.first << "-" << i.second << endl;
@@ -928,7 +925,6 @@ bool Assembler::process_ascii_first_pass(string text, int line)
     errors_to_print[line] = "Ascii directive must be used in section!";
   }
   location_counter+=text.size()+1;
-  debugging_file << "Processed ascii first pass with text " << text  << " containing " << text.size() << " bytes" << endl;
   return true;
 }
 
@@ -1030,7 +1026,6 @@ bool Assembler::process_instruction_first_pass(yytokentype instr_token, string m
       }
     }
     location_counter+=4;
-    debugging_file << "Processed instruction " << mnemonic << " first pass" << endl;
     return true;
   }
 }
@@ -1043,7 +1038,6 @@ bool Assembler::process_end_directive(int line_num)
   }
   section_table[current_section].size = location_counter;
   finished_pass = true;
-  debugging_file << "End of an assembler pass" << endl;
   return true;
 }
 
@@ -1062,11 +1056,8 @@ bool Assembler::process_word_second_pass(pair<bool, Uni> argument, int line_num)
   if(argument.first){
     int value = argument.second.num;
     data[current_section].write((char*)(&value), sizeof(int));
-
-    debugging_file << "Word second pass " << argument.second.num << endl;
   }
   else{
-    debugging_file << "Word second pass " << argument.second.sym << endl;
     string symbol = argument.second.sym;
     create_relocation_entry(symbol);
     int c = 0;
@@ -1083,7 +1074,6 @@ bool Assembler::process_word_second_pass(pair<bool, Uni> argument, int line_num)
 
 bool Assembler::process_ascii_second_pass(string argument, int line_num)
 {
-  debugging_file << "Ascii second pass " << argument << endl;
   //just adding in current section data and adding to location_counter
   for(char c : argument){
     data[current_section].write((char*)(&c), sizeof(char));

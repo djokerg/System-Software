@@ -2,10 +2,10 @@ ASSEMBLER=./assembler
 LINKER=./linker
 EMULATOR=./emulator
 
-${ASSEMBLER} -o main.o main.s
-${ASSEMBLER} -o handler.o handler.s
-${ASSEMBLER} -o isr_terminal.o isr_terminal.s
-${ASSEMBLER} -o isr_timer.o isr_timer.s
+${ASSEMBLER} -o main.o tests/main.s
+${ASSEMBLER} -o handler.o tests/handler.s
+${ASSEMBLER} -o isr_terminal.o tests/isr_terminal.s
+${ASSEMBLER} -o isr_timer.o tests/isr_timer.s
 ${LINKER} -hex \
   -place=my_code@0x40000000 \
   -o program.hex \

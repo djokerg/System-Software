@@ -24,5 +24,8 @@ misc/parser.cpp: misc/parser.y misc/lexer.l
 	mv parser.cpp ./misc/
 	mv parser.hpp ./misc/
 
+clean_all: clean
+	rm -rf assembler linker emulator
+
 clean:
-	rm -rf *.o misc/lexer.cpp misc/lexer.hpp misc/parser.cpp misc/parser.hpp assembler linker emulator *.txt *.hex
+	rm -rf *.o misc/lexer.cpp misc/lexer.hpp misc/parser.cpp misc/parser.hpp *.txt *.hex
