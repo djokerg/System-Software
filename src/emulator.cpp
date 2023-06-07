@@ -487,9 +487,9 @@ bool Emulator::execute_file()
 
 void Emulator::print_errors()
 {
-  cout << "Linker\n";
+  cout << "Emulator\n";
   cout << "Error messages:" << "\n";
   for(string error : errors_to_print){
-    mem_dump << error << endl;
+    cout << error << endl;
   }
 }

@@ -318,6 +318,8 @@ bool Linker::merge_symbol_tables()
             iter->second.section = as.aggregate_id;
             iter->second.value = iter->second.value + as.included_sections[file];//there is offset of current sectin in which is symbol
             output_sym_table[iter->first] = iter->second;
+          }else{
+            extern_symbols[iter->first] = iter->second;
           }
         }
       }
@@ -326,7 +328,6 @@ bool Linker::merge_symbol_tables()
   //try to determine if there are undefined extern symbols
   for(map<string, Symbol_table_entry>::iterator iter = extern_symbols.begin();iter!= extern_symbols.end();iter++){
     map<string, Symbol_table_entry>::iterator iter_sym = output_sym_table.find(iter->first);
-
     if(iter_sym != output_sym_table.end()){
       //found extern symbol
     }else{

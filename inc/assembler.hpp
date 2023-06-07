@@ -153,6 +153,12 @@ class Assembler{
   map<int, string> errors_to_print;//int shows line, string is message about that line
 
   bool finished_pass = false;
+
+  void print_symbol_table();
+  void print_section_table();
+  void print_reloc_table();
+  void print_sections_data();
+  
 public:
   Assembler(const Assembler& obj) = delete;
   
@@ -174,11 +180,6 @@ public:
     txt_output = txt_output.substr(0, txt_output.size()-2) + "_txt.o";
     txt_object_file.open(txt_output);
   }
-
-  void print_symbol_table();
-  void print_section_table();
-  void print_reloc_table();
-  void print_sections_data();
 
 };
 

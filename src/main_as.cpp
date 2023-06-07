@@ -22,11 +22,6 @@ int main(int argc, char* argv[])
 		as->print_errors();
 		return -1;
 	}
-
-	as->print_symbol_table();
-	as->print_section_table();
-	as->print_reloc_table();
-	as->print_sections_data();
 	
 	return 0;
 }

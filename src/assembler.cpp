@@ -411,9 +411,10 @@ void Assembler::create_binary_file()
 
 bool Assembler::process_global_second_pass(string symbol_name, int line_num)
 {
-  if(!symbol_table[symbol_name].defined){
-    errors_to_print[line_num] = "Symbol " + symbol_name + " not defined, but declared as global.";
-  }
+  // if(!symbol_table[symbol_name].defined){
+  //   errors_to_print[line_num] = "Symbol " + symbol_name + " not defined, but declared as global.";
+  //   return false;
+  // }
   return true;
 }
 bool Assembler::compareById(pair<string, Symbol_table_entry> &a, pair<string, Symbol_table_entry> &b)
@@ -810,7 +811,7 @@ bool Assembler::process_extern_first_pass(string symbol_name, int line_num)
   else{
     Symbol_table_entry new_sym;
     new_sym.defined = false;
-    new_sym.global = false;
+    new_sym.global = true;
     new_sym.id_temp = current_id_symbol_table++;
     new_sym.is_extern = true;
     new_sym.name = symbol_name;
@@ -891,8 +892,13 @@ bool Assembler::compile()
   place_literal_pool();
   if(second_pass() == false) return false;
   write_literal_pool();
-  create_binary_file();
   //create binary file
+  create_binary_file();
+  //create txt file
+  print_symbol_table();
+  print_section_table();
+  print_reloc_table();
+  print_sections_data();
   return true;
 }
 
